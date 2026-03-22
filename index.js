@@ -37,6 +37,17 @@ function drawAllElements() {
         {
             ctx.strokeRect(element.startX,element.startY,element.width,element.height);
         }
+        if(element.type==='tool-circle')
+        {
+            ctx.beginPath()
+            ctx.arc(element.startX,element.startY,element.radius,0,2*Math.PI);
+            ctx.stroke();
+        }
+        if(element.type==='tool-square')
+        {
+            endCord = Math.max(Math.abs(element.width),Math.abs(element.height));
+            ctx.strokeRect(element.startX,element.startY,(Math.abs(element.width)/element.width)*endCord,Math.abs(element.height)/element.height*endCord);
+        }
     }
     console.log(elements);
 }
@@ -50,7 +61,8 @@ canvas.addEventListener('mousedown',(e)=>{
         startX: startX,
         startY: startY,
         width: 0,
-        height: 0
+        height: 0,
+        radius: 0
     });
 });
 
@@ -60,6 +72,7 @@ canvas.addEventListener('mousemove',(e)=>{
     let currY=e.offsetY;
     elements[elements.length-1].width=currX-elements[elements.length-1].startX;
     elements[elements.length-1].height=currY-elements[elements.length-1].startY;
+    elements[elements.length-1].radius=Math.sqrt((elements[elements.length-1].width*elements[elements.length-1].width)+(elements[elements.length-1].height*elements[elements.length-1].height));
     console.log(elements);
     drawAllElements();
 })
