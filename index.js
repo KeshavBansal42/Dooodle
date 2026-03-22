@@ -2,6 +2,7 @@ const canvas = document.getElementById('drawing-board');
 const ctx = canvas.getContext('2d');
 
 let elements=[];
+let undoneElements=[];
 let isDrawing=false;
 let currentTool = 'tool-brush';
 
@@ -43,9 +44,11 @@ function drawAllElements() {
         {
             let width = element.lastX - element.startX;
             let height = element.lastY - element.startY;
-            let radius = Math.sqrt((width*width)+(height*height));
+            let radius = Math.sqrt((width*width)+(height*height))/2;
+            let centerX = (element.startX+element.lastX)/2;
+            let centerY = (element.startY+element.lastY)/2;
             ctx.beginPath()
-            ctx.arc(element.startX,element.startY,radius,0,2*Math.PI);
+            ctx.arc(centerX,centerY,radius,0,2*Math.PI);
             ctx.stroke();
         }
         if(element.type==='tool-square')
@@ -99,4 +102,24 @@ canvas.addEventListener('mousemove',(e)=>{
 
 canvas.addEventListener('mouseup',()=>{
     isDrawing=false;
+})
+
+const undoBtn = document.getElementById('action-undo');
+undoBtn.addEventListener('click',()=>{
+    if(elements.length!==0)
+    {
+        undoneElements.push(elements[elements.length-1]);
+        elements.pop();
+        drawAllElements();
+    }
+});
+
+const redoBtn = document.getElementById('action-redo');
+redoBtn.addEventListener('click',()=>{
+    if(undoneElements.length!==0)
+    {
+        elements.push(undoneElements[undoneElements.length-1]);
+        undoneElements.pop();
+        drawAllElements();
+    }
 })
