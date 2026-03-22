@@ -104,22 +104,33 @@ canvas.addEventListener('mouseup',()=>{
     isDrawing=false;
 })
 
-const undoBtn = document.getElementById('action-undo');
-undoBtn.addEventListener('click',()=>{
+function undo() {
     if(elements.length!==0)
     {
         undoneElements.push(elements[elements.length-1]);
         elements.pop();
         drawAllElements();
     }
-});
+}
 
-const redoBtn = document.getElementById('action-redo');
-redoBtn.addEventListener('click',()=>{
+function redo() {
     if(undoneElements.length!==0)
     {
         elements.push(undoneElements[undoneElements.length-1]);
         undoneElements.pop();
         drawAllElements();
     }
+}
+
+const undoBtn = document.getElementById('action-undo');
+undoBtn.addEventListener('click',undo);
+
+const redoBtn = document.getElementById('action-redo');
+redoBtn.addEventListener('click',redo)
+
+window.addEventListener('keydown',(e)=>{
+    if(e.ctrlKey&&e.key==='z')
+        undo();
+    if(e.ctrlKey&&e.key==='y')
+        redo();
 })
