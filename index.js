@@ -35,18 +35,34 @@ function drawAllElements() {
         const element = elements[index];
         if(element.type==='tool-rect')
         {
-            ctx.strokeRect(element.startX,element.startY,element.width,element.height);
+            let width = element.lastX - element.startX;
+            let height = element.lastY - element.startY;
+            ctx.strokeRect(element.startX,element.startY,width,height);
         }
         if(element.type==='tool-circle')
         {
+            let width = element.lastX - element.startX;
+            let height = element.lastY - element.startY;
+            let radius = Math.sqrt((width*width)+(height*height));
             ctx.beginPath()
-            ctx.arc(element.startX,element.startY,element.radius,0,2*Math.PI);
+            ctx.arc(element.startX,element.startY,radius,0,2*Math.PI);
             ctx.stroke();
         }
         if(element.type==='tool-square')
         {
-            endCord = Math.max(Math.abs(element.width),Math.abs(element.height));
-            ctx.strokeRect(element.startX,element.startY,(Math.abs(element.width)/element.width)*endCord,Math.abs(element.height)/element.height*endCord);
+            let width = element.lastX - element.startX;
+            let height = element.lastY - element.startY;
+            let endCord = Math.max(Math.abs(width),Math.abs(height));
+            ctx.strokeRect(element.startX,element.startY,(Math.abs(width)/width)*endCord,Math.abs(height)/height*endCord);
+        }
+        if(element.type==='tool-triangle')
+        {
+            ctx.beginPath();
+            ctx.moveTo(element.startX,element.startY);
+            ctx.lineTo(element.lastX,element.lastY);
+            ctx.lineTo(2*element.startX-element.lastX,element.lastY);
+            ctx.lineTo(element.startX,element.startY);
+            ctx.stroke();
         }
     }
     console.log(elements);
@@ -60,9 +76,11 @@ canvas.addEventListener('mousedown',(e)=>{
         type: currentTool,
         startX: startX,
         startY: startY,
-        width: 0,
-        height: 0,
-        radius: 0
+        // width: 0,
+        // height: 0,
+        // radius: 0
+        lastX: 0,
+        lastY: 0
     });
 });
 
@@ -70,9 +88,11 @@ canvas.addEventListener('mousemove',(e)=>{
     if(!isDrawing) return;
     let currX=e.offsetX;
     let currY=e.offsetY;
-    elements[elements.length-1].width=currX-elements[elements.length-1].startX;
-    elements[elements.length-1].height=currY-elements[elements.length-1].startY;
-    elements[elements.length-1].radius=Math.sqrt((elements[elements.length-1].width*elements[elements.length-1].width)+(elements[elements.length-1].height*elements[elements.length-1].height));
+    // elements[elements.length-1].width=currX-elements[elements.length-1].startX;
+    // elements[elements.length-1].height=currY-elements[elements.length-1].startY;
+    // elements[elements.length-1].radius=Math.sqrt((elements[elements.length-1].width*elements[elements.length-1].width)+(elements[elements.length-1].height*elements[elements.length-1].height));
+    elements[elements.length-1].lastX=currX;
+    elements[elements.length-1].lastY=currY;
     console.log(elements);
     drawAllElements();
 })
