@@ -12,7 +12,7 @@ let currentTool = 'tool-brush';
 // }
 
 window.addEventListener('load', () => {
-    if (!sessionStorage.getItem('myDoodle')) {
+    if (sessionStorage.getItem('myDooodle')) {
         elements = JSON.parse(sessionStorage.getItem('myDooodle'));
         drawAllElements();
     }
@@ -85,16 +85,52 @@ function drawAllElements() {
             }
             ctx.stroke();
         }
-        if (element.type === 'tool-text') {
+        else if (element.type === 'tool-text') {
             ctx.font = "24px sans-serif";
             ctx.textBaseline = 'top';
             ctx.fillText(element.text, element.startX, element.startY);
+        }
+        if (element.type === 'tool-image') {
+            const renderImg = new Image();
+            renderImg.crossOrigin = 'anonymous';
+            renderImg.src = element.url;
+            if (renderImg.complete) {
+                ctx.drawImage(renderImg, element.startX, element.startY, 200, 200);
+            }
+            else {
+                renderImg.onload = () => {
+                    ctx.drawImage(renderImg, element.startX, element.startY, 200, 200);
+                }
+            }
         }
     }
     // console.log(elements);
 }
 
 canvas.addEventListener('mousedown', (e) => {
+    if (currentTool === 'tool-image') {
+        // const img = new Image();
+        // img.crossOrigin='anonymous';
+        // img.src = 'https://picsum.photos/200/200?random=' + Math.random();
+        // img.onload = () => {
+        //     elements.push({
+        //         type: 'image',
+        //         url: img.src,
+        //         startX: e.offsetX,
+        //         startY: e.offsetY
+        //     });
+        //     drawAllElements();
+        //     saveDrawing();
+        // }
+        elements.push({
+            type: 'tool-image',
+            url: 'https://picsum.photos/seed/' + Math.random() + '/200/200',
+            startX: e.offsetX,
+            startY: e.offsetY
+        });
+        drawAllElements();
+        saveDrawing();
+    }
     if (currentTool === 'tool-text') {
         const textarea = document.createElement('textarea');
         textarea.style.position = 'fixed';
@@ -179,6 +215,7 @@ function undo() {
         undoneElements.push(elements[elements.length - 1]);
         elements.pop();
         drawAllElements();
+        saveDrawing();
     }
 }
 
@@ -187,6 +224,7 @@ function redo() {
         elements.push(undoneElements[undoneElements.length - 1]);
         undoneElements.pop();
         drawAllElements();
+        saveDrawing();
     }
 }
 
