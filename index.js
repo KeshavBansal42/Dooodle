@@ -14,7 +14,16 @@ let currentTool = 'tool-brush';
 window.addEventListener('load', () => {
     if (sessionStorage.getItem('myDooodle')) {
         elements = JSON.parse(sessionStorage.getItem('myDooodle'));
-        drawAllElements();
+        if (sessionStorage.getItem('theme')) {
+            if (sessionStorage.getItem('theme') === 'dark')
+                darkModeToggle.click();
+            else {
+                darkModeToggle.click();
+                darkModeToggle.click();
+            }
+        }
+        else
+            drawAllElements();
     }
 })
 
@@ -52,7 +61,7 @@ function drawAllElements() {
             let height = element.lastY - element.startY;
             ctx.strokeRect(element.startX, element.startY, width, height);
         }
-        if (element.type === 'tool-circle') {
+        else if (element.type === 'tool-circle') {
             let width = element.lastX - element.startX;
             let height = element.lastY - element.startY;
             let radius = Math.sqrt((width * width) + (height * height)) / 2;
@@ -62,13 +71,13 @@ function drawAllElements() {
             ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
             ctx.stroke();
         }
-        if (element.type === 'tool-square') {
+        else if (element.type === 'tool-square') {
             let width = element.lastX - element.startX;
             let height = element.lastY - element.startY;
             let endCord = Math.max(Math.abs(width), Math.abs(height));
             ctx.strokeRect(element.startX, element.startY, (Math.abs(width) / width) * endCord, Math.abs(height) / height * endCord);
         }
-        if (element.type === 'tool-triangle') {
+        else if (element.type === 'tool-triangle') {
             ctx.beginPath();
             ctx.moveTo(element.startX, element.startY);
             ctx.lineTo(element.lastX, element.lastY);
@@ -76,7 +85,7 @@ function drawAllElements() {
             ctx.lineTo(element.startX, element.startY);
             ctx.stroke();
         }
-        if (element.type === 'tool-brush') {
+        else if (element.type === 'tool-brush') {
             ctx.beginPath();
             ctx.moveTo(element.points[0].X, element.points[0].Y);
             for (let i = 1; i < element.points.length; i++) {
@@ -88,9 +97,13 @@ function drawAllElements() {
         else if (element.type === 'tool-text') {
             ctx.font = "24px sans-serif";
             ctx.textBaseline = 'top';
+            if (ctx.strokeStyle === '#ffffff')
+                ctx.fillStyle = 'white';
+            else
+                ctx.fillStyle = 'black';
             ctx.fillText(element.text, element.startX, element.startY);
         }
-        if (element.type === 'tool-image') {
+        else if (element.type === 'tool-image') {
             const renderImg = new Image();
             renderImg.crossOrigin = 'anonymous';
             renderImg.src = element.url;
@@ -103,6 +116,7 @@ function drawAllElements() {
                 }
             }
         }
+        console.log(elements);
     }
     // console.log(elements);
 }
@@ -131,7 +145,7 @@ canvas.addEventListener('mousedown', (e) => {
         drawAllElements();
         saveDrawing();
     }
-    if (currentTool === 'tool-text') {
+    else if (currentTool === 'tool-text') {
         const textarea = document.createElement('textarea');
         textarea.style.position = 'fixed';
         textarea.style.left = (e.clientX - 1) + 'px';
@@ -191,10 +205,11 @@ canvas.addEventListener('mousedown', (e) => {
 });
 
 canvas.addEventListener('mousemove', (e) => {
-    if (!isDrawing) return;
     let currX = e.offsetX;
     let currY = e.offsetY;
-    if (currentTool === 'tool-brush') {
+    if(currentTool==='tool-select') return;
+    else if (!isDrawing) return;
+    else if (currentTool === 'tool-brush') {
         elements[elements.length - 1].points.push({ X: currX, Y: currY });
     }
     else {
@@ -207,6 +222,14 @@ canvas.addEventListener('mousemove', (e) => {
 
 canvas.addEventListener('mouseup', () => {
     isDrawing = false;
+    if(elements.length>0)
+    {
+        let element = elements[elements.length-1];
+        if(element.type!=='tool-brush'&&element.startX===element.lastX&&element.startY===element.lastY)
+        {
+            elements.pop();
+        }
+    }
     saveDrawing();
 })
 
@@ -235,9 +258,9 @@ const redoBtn = document.getElementById('action-redo');
 redoBtn.addEventListener('click', redo)
 
 window.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 'z')
+    if ((e.ctrlKey||e.metaKey) && e.key === 'z')
         undo();
-    if (e.ctrlKey && e.key === 'y')
+    if ((e.ctrlKey||e.metaKey) && e.key === 'y')
         redo();
 })
 
@@ -289,18 +312,32 @@ function saveDrawing() {
 }
 
 const clear = document.getElementById('action-clear');
-clear.addEventListener('click',()=>{
-    elements=[];
-    undoneElements=[];
+clear.addEventListener('click', () => {
+    elements = [];
+    undoneElements = [];
     drawAllElements();
     saveDrawing();
 })
 
 const downloadPNG = document.getElementById('action-download');
-downloadPNG.addEventListener('click',()=>{
+downloadPNG.addEventListener('click', () => {
     let url = canvas.toDataURL('image/png');
     let link = document.createElement('a');
-    link.href=url;
-    link.download='myDooodle.png';
+    link.href = url;
+    link.download = 'myDooodle.png';
     link.click();
+});
+
+const darkModeToggle = document.getElementById('theme-toggle');
+darkModeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    if (ctx.strokeStyle === '#ffffff') {
+        ctx.strokeStyle = 'black';
+        sessionStorage.setItem('theme', 'light');
+    }
+    else {
+        ctx.strokeStyle = 'white';
+        sessionStorage.setItem('theme', 'dark');
+    }
+    drawAllElements();
 })

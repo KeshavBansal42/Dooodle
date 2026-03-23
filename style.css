@@ -1,54 +1,88 @@
+:root {
+  --bg-color: #ffffff;
+  --shadow-color: #00000033;
+  --hbar-color: #808080;
+  --toolbar-hover-color: #ffb6c14d;
+  --toolbar-selected-color: #ffb6c199;
+  --btn-color: #000000;
+}
+
+.dark-mode {
+  --bg-color: #121212;
+  --shadow-color: #ffffff33;
+  --hbar-color: #717171;
+  --toolbar-hover-color: #c1ffb24d;
+  --toolbar-selected-color: #c1ffb699;
+  --btn-color: #ffffff;
+}
+
 body {
-    height: 100vh;
-    margin: 0;
-    overflow: hidden;
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+  background-color: var(--bg-color);
 }
 
 #app {
-    display: flex;
-    justify-content: center;
+  display: flex;
+  justify-content: center;
 }
 
 #toolbar {
-    position: absolute;
-    margin: 0.6rem;
-    background-color: white;
-    padding: 0.5rem;
-    justify-content: space-around;
-    align-items: center;
-    display: flex;
-    box-shadow: 0 0 8px rgba(0,0,0,0.2);
-    border-radius: 8px;
+  position: absolute;
+  margin: 0.6rem;
+  background-color: var(--bg-color);
+  padding: 0.5rem;
+  justify-content: space-around;
+  align-items: center;
+  display: flex;
+  box-shadow: 0 0 8px var(--shadow-color);
+  border-radius: 8px;
 }
 
 .toolbar-btn {
-    background-color: white;
-    border: 0;
-    margin: 0.1rem 0.2rem;
-    cursor: pointer;
-    border-radius: 4px;
-    height: 2.2rem;
-    width: 2.2rem;
-    transition: background-color 0.2s ease-in-out;
+  background-color: var(--bg-color);
+  color: var(--btn-color);
+  border: 0;
+  margin: 0.1rem 0.2rem;
+  cursor: pointer;
+  border-radius: 4px;
+  height: 2.2rem;
+  width: 2.2rem;
+  transition: background-color 0.2s ease-in-out;
 }
 
 .hbar {
-    width: 0.1rem;
-    height: 1.4rem;
-    background-color: gray;
-    margin: 0 4px;
-    flex-shrink: 0;
+  width: 0.1rem;
+  height: 1.4rem;
+  background-color: var(--hbar-color);
+  margin: 0 4px;
+  flex-shrink: 0;
 }
 
 .toolbar-btn:hover {
-    background-color: rgba(255,182,193,0.3);
+  background-color: var(--toolbar-hover-color);
 }
 
 .tool-btn-selected {
-    background-color: rgba(255,182,193,0.6);
+  background-color: var(--toolbar-selected-color);
 }
 
 #drawing-board {
-    height: 100vh;
-    cursor: crosshair;
+  height: 100vh;
+  cursor: crosshair;
+}
+
+#sun-theme {
+  display: block;
+}
+#moon-theme {
+  display: none;
+}
+
+.dark-mode #sun-theme {
+  display: none;
+}
+.dark-mode #moon-theme {
+  display: block;
 }
