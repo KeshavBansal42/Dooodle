@@ -6,6 +6,7 @@ let undoneElements = [];
 let isDrawing = false;
 let currentTool = 'tool-brush';
 let inputColor = '#000000';
+let sliderTextVal = document.getElementById('slider-value-text');
 document.getElementById('color-input').addEventListener('input', () => {
     inputColor = document.getElementById('color-input').value;
     console.log(inputColor);
@@ -13,6 +14,7 @@ document.getElementById('color-input').addEventListener('input', () => {
 let inputWidth = '1';
 document.getElementById('width-input').addEventListener('input',()=>{
     inputWidth = document.getElementById('width-input').value;
+    sliderTextVal.innerHTML=inputWidth;
 })
 
 // if(!sessionStorage.getItem('myDoodle'))

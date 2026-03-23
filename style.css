@@ -112,7 +112,7 @@ svg {
   right: 0;
   margin-right: 1rem;
   background-color: var(--bg-color);
-  padding: 0.5rem 0.5rem 1rem 0.5rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.5rem;
   display: flex;
   flex-direction: column;
   justify-content: space-around;
@@ -142,4 +142,30 @@ svg {
   vertical-align: middle;
   accent-color: var(--toolbar-selected-color);
   border: none;
+  margin: 0 0 0.5rem 0;
+}
+
+#slider-value {
+  margin: 0;
+  display: grid;
+  place-items: center;
+  position: relative;
+  border: 1px;
+  border-radius: 100%;
+  border-color: var(--btn-color);
+  border-style: dashed;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  margin: 0.4rem 0 0.2rem 0;
+}
+
+#slider-value-text {
+  position: relative;
+  color: var(--btn-color);
+  font-size: large;
+  margin: 0;
+  padding: 0;
+  text-align: center;
 }
