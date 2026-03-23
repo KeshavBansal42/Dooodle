@@ -10,6 +10,10 @@ document.getElementById('color-input').addEventListener('input', () => {
     inputColor = document.getElementById('color-input').value;
     console.log(inputColor);
 })
+let inputWidth = '1';
+document.getElementById('width-input').addEventListener('input',()=>{
+    inputWidth = document.getElementById('width-input').value;
+})
 
 // if(!sessionStorage.getItem('myDoodle'))
 // {
@@ -74,6 +78,7 @@ function drawAllElements() {
         if (element.type === 'tool-rect') {
             let width = element.lastX - element.startX;
             let height = element.lastY - element.startY;
+            ctx.lineWidth=element.width;
             ctx.strokeStyle = element.color;
             ctx.strokeRect(element.startX, element.startY, width, height);
         }
@@ -83,6 +88,7 @@ function drawAllElements() {
             let radius = Math.sqrt((width * width) + (height * height)) / 2;
             let centerX = (element.startX + element.lastX) / 2;
             let centerY = (element.startY + element.lastY) / 2;
+            ctx.lineWidth=element.width;
             ctx.strokeStyle = element.color;
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
@@ -92,11 +98,13 @@ function drawAllElements() {
             let width = element.lastX - element.startX;
             let height = element.lastY - element.startY;
             let endCord = Math.max(Math.abs(width), Math.abs(height));
+            ctx.lineWidth=element.width;
             ctx.strokeStyle = element.color;
             ctx.strokeRect(element.startX, element.startY, (Math.abs(width) / width) * endCord, Math.abs(height) / height * endCord);
         }
         else if (element.type === 'tool-triangle') {
             ctx.strokeStyle = element.color;
+            ctx.lineWidth=element.width;
             ctx.beginPath();
             ctx.moveTo(element.startX, element.startY);
             ctx.lineTo(element.lastX, element.lastY);
@@ -106,6 +114,7 @@ function drawAllElements() {
         }
         else if (element.type === 'tool-brush') {
             ctx.strokeStyle = element.color;
+            ctx.lineWidth=element.width;
             ctx.beginPath();
             ctx.moveTo(element.points[0].X, element.points[0].Y);
             for (let i = 1; i < element.points.length; i++) {
@@ -227,7 +236,8 @@ canvas.addEventListener('mousedown', (e) => {
                 startY: startY,
                 lastX: startX,
                 lastY: startY,
-                color: inputColor
+                color: inputColor,
+                width: inputWidth
             });
         }
     }
