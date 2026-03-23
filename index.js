@@ -5,6 +5,11 @@ let elements = [];
 let undoneElements = [];
 let isDrawing = false;
 let currentTool = 'tool-brush';
+let inputColor = '#000000';
+document.getElementById('color-input').addEventListener('input', () => {
+    inputColor = document.getElementById('color-input').value;
+    console.log(inputColor);
+})
 
 // if(!sessionStorage.getItem('myDoodle'))
 // {
@@ -12,14 +17,23 @@ let currentTool = 'tool-brush';
 // }
 
 window.addEventListener('load', () => {
+    console.log(sessionStorage);
+    if (sessionStorage.getItem('last-tool')) {
+        currentTool = sessionStorage.getItem('last-tool');
+        document.getElementById(currentTool).click();
+    }
     if (sessionStorage.getItem('myDooodle')) {
         elements = JSON.parse(sessionStorage.getItem('myDooodle'));
         if (sessionStorage.getItem('theme')) {
-            if (sessionStorage.getItem('theme') === 'dark')
-                darkModeToggle.click();
+            console.log(sessionStorage.getItem('theme'))
+            if (sessionStorage.getItem('theme') === 'dark') {
+                document.body.classList.toggle('dark-mode')
+                drawAllElements();
+            }
             else {
-                darkModeToggle.click();
-                darkModeToggle.click();
+                drawAllElements();
+                // darkModeToggle.click();
+                // darkModeToggle.click();
             }
         }
         else
@@ -48,6 +62,7 @@ for (let index = 0; index < toolButtons.length; index++) {
             tool.classList.remove('tool-btn-selected');
         }
         element.classList.add('tool-btn-selected');
+        sessionStorage.setItem('last-tool', currentTool);
         console.log(currentTool);
     })
 }
@@ -59,6 +74,7 @@ function drawAllElements() {
         if (element.type === 'tool-rect') {
             let width = element.lastX - element.startX;
             let height = element.lastY - element.startY;
+            ctx.strokeStyle = element.color;
             ctx.strokeRect(element.startX, element.startY, width, height);
         }
         else if (element.type === 'tool-circle') {
@@ -67,7 +83,8 @@ function drawAllElements() {
             let radius = Math.sqrt((width * width) + (height * height)) / 2;
             let centerX = (element.startX + element.lastX) / 2;
             let centerY = (element.startY + element.lastY) / 2;
-            ctx.beginPath()
+            ctx.strokeStyle = element.color;
+            ctx.beginPath();
             ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
             ctx.stroke();
         }
@@ -75,9 +92,11 @@ function drawAllElements() {
             let width = element.lastX - element.startX;
             let height = element.lastY - element.startY;
             let endCord = Math.max(Math.abs(width), Math.abs(height));
+            ctx.strokeStyle = element.color;
             ctx.strokeRect(element.startX, element.startY, (Math.abs(width) / width) * endCord, Math.abs(height) / height * endCord);
         }
         else if (element.type === 'tool-triangle') {
+            ctx.strokeStyle = element.color;
             ctx.beginPath();
             ctx.moveTo(element.startX, element.startY);
             ctx.lineTo(element.lastX, element.lastY);
@@ -86,6 +105,7 @@ function drawAllElements() {
             ctx.stroke();
         }
         else if (element.type === 'tool-brush') {
+            ctx.strokeStyle = element.color;
             ctx.beginPath();
             ctx.moveTo(element.points[0].X, element.points[0].Y);
             for (let i = 1; i < element.points.length; i++) {
@@ -96,11 +116,8 @@ function drawAllElements() {
         }
         else if (element.type === 'tool-text') {
             ctx.font = "24px sans-serif";
+            ctx.fillStyle = element.color;
             ctx.textBaseline = 'top';
-            if (ctx.strokeStyle === '#ffffff')
-                ctx.fillStyle = 'white';
-            else
-                ctx.fillStyle = 'black';
             ctx.fillText(element.text, element.startX, element.startY);
         }
         else if (element.type === 'tool-image') {
@@ -140,7 +157,7 @@ canvas.addEventListener('mousedown', (e) => {
             type: 'tool-image',
             url: 'https://picsum.photos/seed/' + Math.random() + '/200/200',
             startX: e.offsetX,
-            startY: e.offsetY
+            startY: e.offsetY,
         });
         drawAllElements();
         saveDrawing();
@@ -151,7 +168,16 @@ canvas.addEventListener('mousedown', (e) => {
         textarea.style.left = (e.clientX - 1) + 'px';
         textarea.style.top = (e.clientY - 1) + 'px';
         textarea.style.background = 'transparent';
-        textarea.style.border = '1px dashed black';
+        textarea.style.border = '1px dashed';
+        if (sessionStorage.getItem('theme')) {
+            if (sessionStorage.getItem('theme') === 'light') {
+                textarea.style.borderColor = 'black';
+                textarea.style.color = inputColor;
+            } else {
+                textarea.style.borderColor = 'white';
+                textarea.style.color = inputColor;
+            }
+        }
         textarea.style.outline = 'none';
         textarea.style.lineHeight = '1';
 
@@ -173,7 +199,8 @@ canvas.addEventListener('mousedown', (e) => {
                     type: 'tool-text',
                     text: textarea.value,
                     startX: e.offsetX,
-                    startY: e.offsetY
+                    startY: e.offsetY,
+                    color: inputColor
                 });
                 drawAllElements();
                 saveDrawing();
@@ -189,7 +216,8 @@ canvas.addEventListener('mousedown', (e) => {
         if (currentTool === 'tool-brush') {
             elements.push({
                 type: currentTool,
-                points: [{ X: startX, Y: startY }]
+                points: [{ X: startX, Y: startY }],
+                color: inputColor
             });
         }
         else {
@@ -198,7 +226,8 @@ canvas.addEventListener('mousedown', (e) => {
                 startX: startX,
                 startY: startY,
                 lastX: startX,
-                lastY: startY
+                lastY: startY,
+                color: inputColor
             });
         }
     }
@@ -207,7 +236,7 @@ canvas.addEventListener('mousedown', (e) => {
 canvas.addEventListener('mousemove', (e) => {
     let currX = e.offsetX;
     let currY = e.offsetY;
-    if(currentTool==='tool-select') return;
+    if (currentTool === 'tool-select') return;
     else if (!isDrawing) return;
     else if (currentTool === 'tool-brush') {
         elements[elements.length - 1].points.push({ X: currX, Y: currY });
@@ -222,11 +251,9 @@ canvas.addEventListener('mousemove', (e) => {
 
 canvas.addEventListener('mouseup', () => {
     isDrawing = false;
-    if(elements.length>0)
-    {
-        let element = elements[elements.length-1];
-        if(element.type!=='tool-brush'&&element.startX===element.lastX&&element.startY===element.lastY)
-        {
+    if (elements.length > 0) {
+        let element = elements[elements.length - 1];
+        if (element.type !== 'tool-brush' && element.startX === element.lastX && element.startY === element.lastY) {
             elements.pop();
         }
     }
@@ -258,9 +285,9 @@ const redoBtn = document.getElementById('action-redo');
 redoBtn.addEventListener('click', redo)
 
 window.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey||e.metaKey) && e.key === 'z')
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z')
         undo();
-    if ((e.ctrlKey||e.metaKey) && e.key === 'y')
+    if ((e.ctrlKey || e.metaKey) && e.key === 'y')
         redo();
 })
 
@@ -276,7 +303,16 @@ canvas.addEventListener('dblclick', (e) => {
                 textarea.style.left = element.startX - 1 + 'px';
                 textarea.style.top = element.startY - 2 + 'px';
                 textarea.style.background = 'transparent';
-                textarea.style.border = '1px dashed black';
+                textarea.style.border = '1px dashed';
+                if (sessionStorage.getItem('theme')) {
+                    if (sessionStorage.getItem('theme') === 'light') {
+                        textarea.style.borderColor = 'black';
+                        textarea.style.color = element.color;
+                    } else {
+                        textarea.style.borderColor = 'white';
+                        textarea.style.color = element.color;
+                    }
+                }
                 textarea.style.outline = 'none';
                 textarea.style.lineHeight = '1';
 
@@ -331,13 +367,22 @@ downloadPNG.addEventListener('click', () => {
 const darkModeToggle = document.getElementById('theme-toggle');
 darkModeToggle.addEventListener('click', () => {
     document.body.classList.toggle('dark-mode');
-    if (ctx.strokeStyle === '#ffffff') {
-        ctx.strokeStyle = 'black';
-        sessionStorage.setItem('theme', 'light');
+    // if (ctx.strokeStyle === '#ffffff') {
+    //     // ctx.strokeStyle = 'black';
+    //     sessionStorage.setItem('theme', 'light');
+    // }
+    // else {
+    //     // ctx.strokeStyle = 'white';
+    //     sessionStorage.setItem('theme', 'dark');
+    // }
+    if (sessionStorage.getItem('theme')) {
+        if (sessionStorage.getItem('theme') === 'dark')
+            sessionStorage.setItem('theme', 'light');
+        else
+            sessionStorage.setItem('theme', 'dark');
     }
-    else {
-        ctx.strokeStyle = 'white';
+    else
         sessionStorage.setItem('theme', 'dark');
-    }
+    console.log(sessionStorage);
     drawAllElements();
 })
