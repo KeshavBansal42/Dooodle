@@ -6,9 +6,22 @@ let undoneElements = [];
 let isDrawing = false;
 let currentTool = 'tool-brush';
 
+// if(!sessionStorage.getItem('myDoodle'))
+// {
+//     elements=JSON.parse(sessionStorage.getItem('myDooodle'));
+// }
+
+window.addEventListener('load', () => {
+    if (!sessionStorage.getItem('myDoodle')) {
+        elements = JSON.parse(sessionStorage.getItem('myDooodle'));
+        drawAllElements();
+    }
+})
+
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    drawAllElements();
 }
 
 resizeCanvas();
@@ -78,7 +91,7 @@ function drawAllElements() {
             ctx.fillText(element.text, element.startX, element.startY);
         }
     }
-    console.log(elements);
+    // console.log(elements);
 }
 
 canvas.addEventListener('mousedown', (e) => {
@@ -113,6 +126,7 @@ canvas.addEventListener('mousedown', (e) => {
                     startY: e.offsetY
                 });
                 drawAllElements();
+                saveDrawing();
             }
             textarea.remove();
         })
@@ -151,12 +165,13 @@ canvas.addEventListener('mousemove', (e) => {
         elements[elements.length - 1].lastX = currX;
         elements[elements.length - 1].lastY = currY;
     }
-    console.log(elements);
+    // console.log(elements);
     drawAllElements();
 })
 
 canvas.addEventListener('mouseup', () => {
     isDrawing = false;
+    saveDrawing();
 })
 
 function undo() {
@@ -197,8 +212,8 @@ canvas.addEventListener('dblclick', (e) => {
             if ((e.offsetX >= element.startX && e.offsetX <= element.startX + width) && (e.offsetY >= element.startY && e.offsetY <= element.startY + 24)) {
                 const textarea = document.createElement('textarea');
                 textarea.style.position = 'fixed';
-                textarea.style.left = element.startX-1 + 'px';
-                textarea.style.top = element.startY-2 + 'px';
+                textarea.style.left = element.startX - 1 + 'px';
+                textarea.style.top = element.startY - 2 + 'px';
                 textarea.style.background = 'transparent';
                 textarea.style.border = '1px dashed black';
                 textarea.style.outline = 'none';
@@ -211,7 +226,7 @@ canvas.addEventListener('dblclick', (e) => {
 
                 textarea.value = element.text;
 
-                element.text="";
+                element.text = "";
                 drawAllElements();
 
                 document.body.appendChild(textarea);
@@ -221,6 +236,7 @@ canvas.addEventListener('dblclick', (e) => {
                 textarea.addEventListener('blur', () => {
                     element.text = textarea.value;
                     drawAllElements();
+                    saveDrawing();
                     textarea.remove();
                 })
                 break;
@@ -228,3 +244,8 @@ canvas.addEventListener('dblclick', (e) => {
         }
     }
 })
+
+function saveDrawing() {
+    let saveData = JSON.stringify(elements);
+    sessionStorage.setItem('myDooodle', saveData);
+}
