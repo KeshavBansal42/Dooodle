@@ -1,26 +1,26 @@
 const canvas = document.getElementById('drawing-board');
 const ctx = canvas.getContext('2d');
 
-let elements=[];
-let undoneElements=[];
-let isDrawing=false;
+let elements = [];
+let undoneElements = [];
+let isDrawing = false;
 let currentTool = 'tool-brush';
 
 function resizeCanvas() {
-    canvas.width=window.innerWidth;
-    canvas.height=window.innerHeight;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 }
 
 resizeCanvas();
 
-window.addEventListener('resize',resizeCanvas);
+window.addEventListener('resize', resizeCanvas);
 
 const toolButtons = document.querySelectorAll('.tool-btn');
 
 for (let index = 0; index < toolButtons.length; index++) {
     const element = toolButtons[index];
-    element.addEventListener('click',()=> {
-        currentTool=element.id;
+    element.addEventListener('click', () => {
+        currentTool = element.id;
         for (let i = 0; i < toolButtons.length; i++) {
             const tool = toolButtons[i];
             tool.classList.remove('tool-btn-selected');
@@ -31,106 +31,200 @@ for (let index = 0; index < toolButtons.length; index++) {
 }
 
 function drawAllElements() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (let index = 0; index < elements.length; index++) {
         const element = elements[index];
-        if(element.type==='tool-rect')
-        {
+        if (element.type === 'tool-rect') {
             let width = element.lastX - element.startX;
             let height = element.lastY - element.startY;
-            ctx.strokeRect(element.startX,element.startY,width,height);
+            ctx.strokeRect(element.startX, element.startY, width, height);
         }
-        if(element.type==='tool-circle')
-        {
+        if (element.type === 'tool-circle') {
             let width = element.lastX - element.startX;
             let height = element.lastY - element.startY;
-            let radius = Math.sqrt((width*width)+(height*height))/2;
-            let centerX = (element.startX+element.lastX)/2;
-            let centerY = (element.startY+element.lastY)/2;
+            let radius = Math.sqrt((width * width) + (height * height)) / 2;
+            let centerX = (element.startX + element.lastX) / 2;
+            let centerY = (element.startY + element.lastY) / 2;
             ctx.beginPath()
-            ctx.arc(centerX,centerY,radius,0,2*Math.PI);
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
             ctx.stroke();
         }
-        if(element.type==='tool-square')
-        {
+        if (element.type === 'tool-square') {
             let width = element.lastX - element.startX;
             let height = element.lastY - element.startY;
-            let endCord = Math.max(Math.abs(width),Math.abs(height));
-            ctx.strokeRect(element.startX,element.startY,(Math.abs(width)/width)*endCord,Math.abs(height)/height*endCord);
+            let endCord = Math.max(Math.abs(width), Math.abs(height));
+            ctx.strokeRect(element.startX, element.startY, (Math.abs(width) / width) * endCord, Math.abs(height) / height * endCord);
         }
-        if(element.type==='tool-triangle')
-        {
+        if (element.type === 'tool-triangle') {
             ctx.beginPath();
-            ctx.moveTo(element.startX,element.startY);
-            ctx.lineTo(element.lastX,element.lastY);
-            ctx.lineTo(2*element.startX-element.lastX,element.lastY);
-            ctx.lineTo(element.startX,element.startY);
+            ctx.moveTo(element.startX, element.startY);
+            ctx.lineTo(element.lastX, element.lastY);
+            ctx.lineTo(2 * element.startX - element.lastX, element.lastY);
+            ctx.lineTo(element.startX, element.startY);
             ctx.stroke();
+        }
+        if (element.type === 'tool-brush') {
+            ctx.beginPath();
+            ctx.moveTo(element.points[0].X, element.points[0].Y);
+            for (let i = 1; i < element.points.length; i++) {
+                const cords = element.points[i];
+                ctx.lineTo(cords.X, cords.Y);
+            }
+            ctx.stroke();
+        }
+        if (element.type === 'tool-text') {
+            ctx.font = "24px sans-serif";
+            ctx.textBaseline = 'top';
+            ctx.fillText(element.text, element.startX, element.startY);
         }
     }
     console.log(elements);
 }
 
-canvas.addEventListener('mousedown',(e)=>{
-    isDrawing=true;
-    let startX=e.offsetX;
-    let startY=e.offsetY;
-    elements.push({
-        type: currentTool,
-        startX: startX,
-        startY: startY,
-        // width: 0,
-        // height: 0,
-        // radius: 0
-        lastX: 0,
-        lastY: 0
-    });
+canvas.addEventListener('mousedown', (e) => {
+    if (currentTool === 'tool-text') {
+        const textarea = document.createElement('textarea');
+        textarea.style.position = 'fixed';
+        textarea.style.left = (e.clientX - 1) + 'px';
+        textarea.style.top = (e.clientY - 1) + 'px';
+        textarea.style.background = 'transparent';
+        textarea.style.border = '1px dashed black';
+        textarea.style.outline = 'none';
+        textarea.style.lineHeight = '1';
+
+        textarea.style.fontFamily = 'sans-serif';
+        textarea.style.fontSize = '24px';
+        textarea.style.margin = '0';
+        textarea.style.padding = '0';
+
+        document.body.appendChild(textarea);
+
+        // textarea.focus();
+        setTimeout(() => {
+            textarea.focus();
+        }, 0)
+
+        textarea.addEventListener('blur', () => {
+            if (textarea.value !== "") {
+                elements.push({
+                    type: 'tool-text',
+                    text: textarea.value,
+                    startX: e.offsetX,
+                    startY: e.offsetY
+                });
+                drawAllElements();
+            }
+            textarea.remove();
+        })
+    }
+    else {
+        isDrawing = true;
+        undoneElements = [];
+        let startX = e.offsetX;
+        let startY = e.offsetY;
+        if (currentTool === 'tool-brush') {
+            elements.push({
+                type: currentTool,
+                points: [{ X: startX, Y: startY }]
+            });
+        }
+        else {
+            elements.push({
+                type: currentTool,
+                startX: startX,
+                startY: startY,
+                lastX: startX,
+                lastY: startY
+            });
+        }
+    }
 });
 
-canvas.addEventListener('mousemove',(e)=>{
-    if(!isDrawing) return;
-    let currX=e.offsetX;
-    let currY=e.offsetY;
-    // elements[elements.length-1].width=currX-elements[elements.length-1].startX;
-    // elements[elements.length-1].height=currY-elements[elements.length-1].startY;
-    // elements[elements.length-1].radius=Math.sqrt((elements[elements.length-1].width*elements[elements.length-1].width)+(elements[elements.length-1].height*elements[elements.length-1].height));
-    elements[elements.length-1].lastX=currX;
-    elements[elements.length-1].lastY=currY;
+canvas.addEventListener('mousemove', (e) => {
+    if (!isDrawing) return;
+    let currX = e.offsetX;
+    let currY = e.offsetY;
+    if (currentTool === 'tool-brush') {
+        elements[elements.length - 1].points.push({ X: currX, Y: currY });
+    }
+    else {
+        elements[elements.length - 1].lastX = currX;
+        elements[elements.length - 1].lastY = currY;
+    }
     console.log(elements);
     drawAllElements();
 })
 
-canvas.addEventListener('mouseup',()=>{
-    isDrawing=false;
+canvas.addEventListener('mouseup', () => {
+    isDrawing = false;
 })
 
 function undo() {
-    if(elements.length!==0)
-    {
-        undoneElements.push(elements[elements.length-1]);
+    if (elements.length !== 0) {
+        undoneElements.push(elements[elements.length - 1]);
         elements.pop();
         drawAllElements();
     }
 }
 
 function redo() {
-    if(undoneElements.length!==0)
-    {
-        elements.push(undoneElements[undoneElements.length-1]);
+    if (undoneElements.length !== 0) {
+        elements.push(undoneElements[undoneElements.length - 1]);
         undoneElements.pop();
         drawAllElements();
     }
 }
 
 const undoBtn = document.getElementById('action-undo');
-undoBtn.addEventListener('click',undo);
+undoBtn.addEventListener('click', undo);
 
 const redoBtn = document.getElementById('action-redo');
-redoBtn.addEventListener('click',redo)
+redoBtn.addEventListener('click', redo)
 
-window.addEventListener('keydown',(e)=>{
-    if(e.ctrlKey&&e.key==='z')
+window.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'z')
         undo();
-    if(e.ctrlKey&&e.key==='y')
+    if (e.ctrlKey && e.key === 'y')
         redo();
+})
+
+canvas.addEventListener('dblclick', (e) => {
+    if (currentTool !== 'tool-select') return;
+    for (let i = 0; i < elements.length; i++) {
+        const element = elements[i];
+        if (element.type === 'tool-text') {
+            let width = ctx.measureText(element.text).width;
+            if ((e.offsetX >= element.startX && e.offsetX <= element.startX + width) && (e.offsetY >= element.startY && e.offsetY <= element.startY + 24)) {
+                const textarea = document.createElement('textarea');
+                textarea.style.position = 'fixed';
+                textarea.style.left = element.startX-1 + 'px';
+                textarea.style.top = element.startY-2 + 'px';
+                textarea.style.background = 'transparent';
+                textarea.style.border = '1px dashed black';
+                textarea.style.outline = 'none';
+                textarea.style.lineHeight = '1';
+
+                textarea.style.fontFamily = 'sans-serif';
+                textarea.style.fontSize = '24px'
+                textarea.style.margin = '0';
+                textarea.style.padding = '0';
+
+                textarea.value = element.text;
+
+                element.text="";
+                drawAllElements();
+
+                document.body.appendChild(textarea);
+
+                textarea.focus();
+
+                textarea.addEventListener('blur', () => {
+                    element.text = textarea.value;
+                    drawAllElements();
+                    textarea.remove();
+                })
+                break;
+            }
+        }
+    }
 })
