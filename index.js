@@ -287,3 +287,20 @@ function saveDrawing() {
     let saveData = JSON.stringify(elements);
     sessionStorage.setItem('myDooodle', saveData);
 }
+
+const clear = document.getElementById('action-clear');
+clear.addEventListener('click',()=>{
+    elements=[];
+    undoneElements=[];
+    drawAllElements();
+    saveDrawing();
+})
+
+const downloadPNG = document.getElementById('action-download');
+downloadPNG.addEventListener('click',()=>{
+    let url = canvas.toDataURL('image/png');
+    let link = document.createElement('a');
+    link.href=url;
+    link.download='myDooodle.png';
+    link.click();
+})
