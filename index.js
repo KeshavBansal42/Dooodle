@@ -28,12 +28,19 @@ let inputWidth = '1';
 document.getElementById('width-input').addEventListener('input', () => {
     inputWidth = document.getElementById('width-input').value;
     sliderTextVal.innerHTML = inputWidth;
-    sessionStorage.setItem('width',inputWidth);
+    sessionStorage.setItem('width', inputWidth);
     if (selectedElementIndex !== null) {
         elements[selectedElementIndex].width = inputWidth;
         drawAllElements();
         saveDrawing();
     }
+});
+
+let bgcolor = '#ffffff';
+document.getElementById('bg-color-picker').addEventListener('input',()=> {
+    bgcolor = document.getElementById('bg-color-picker').value;
+    sessionStorage.setItem('bgcolor',bgcolor);
+    drawAllElements();
 })
 
 window.addEventListener('load', () => {
@@ -48,24 +55,24 @@ window.addEventListener('load', () => {
             console.log(sessionStorage.getItem('theme'))
             if (sessionStorage.getItem('theme') === 'dark') {
                 document.body.classList.toggle('dark-mode')
-                drawAllElements();
-            }
-            else {
-                drawAllElements();
             }
         }
-        else
-            drawAllElements();
     }
     if (sessionStorage.getItem('color')) {
         inputColor = sessionStorage.getItem('color');
         document.getElementById('color-input').value = sessionStorage.getItem('color');
     }
-    if(sessionStorage.getItem('width')) {
+    if (sessionStorage.getItem('width')) {
         inputWidth = sessionStorage.getItem('width');
         sliderTextVal.innerHTML = inputWidth;
         document.getElementById('width-input').value = sessionStorage.getItem('width');
     }
+    if (sessionStorage.getItem('bgcolor'))
+    {
+        bgcolor = sessionStorage.getItem('bgcolor');
+        document.getElementById('bg-color-picker').value=sessionStorage.getItem('bgcolor');
+    }
+    drawAllElements();
 })
 
 function resizeCanvas() {
@@ -185,6 +192,8 @@ function getBoundingBox(element) {
 
 function drawAllElements() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = bgcolor;
+    ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
     for (let index = 0; index < elements.length; index++) {
         const element = elements[index];
         if (element.type === 'tool-rect') {

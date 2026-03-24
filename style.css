@@ -45,10 +45,22 @@ body {
 
 /*beginning of the styles for the top toolbar */
 
-#toolbar {
+#top-ui-container {
   position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%); /* Centers it perfectly */
   z-index: 10;
-  margin: 1rem;
+  display: flex;
+  gap: 1rem; /* Space between toolbar and picker */
+  align-items: center;
+  flex-wrap: wrap; /* Lets them stack if the phone screen is super narrow! */
+  justify-content: center;
+  width: max-content;
+  max-width: 95vw;
+}
+
+#toolbar {
   background-color: var(--bg-color);
   padding: 0.5rem 0.5rem 0.5rem 0.5rem;
   justify-content: space-around;
@@ -88,6 +100,22 @@ body {
 
 svg {
   vertical-align: -3px;
+}
+
+#bg-color-picker {
+  /* margin: 0.4rem 0.4rem 1rem 0.4rem; */
+  appearance: none;
+  height: 3.6rem;
+  width: 3.6rem;
+  border-radius: 100%;
+  cursor: pointer;
+  border: none;
+  background-color: transparent;
+}
+
+#bg-color-picker::-webkit-color-swatch {
+  border: 0.4rem solid var(--bg-color);
+  border-radius: 100%;
 }
 
 /*end of the styles for the top toolbar */
