@@ -5,11 +5,12 @@ let elements = [];
 let undoneElements = [];
 let isDrawing = false;
 let currentTool = 'tool-brush';
-let sliderTextVal = document.getElementById('slider-value-text');
+let sliderTextVal = document.getElementById('slider-value-text'); //display for the selected width
 let selectedElementIndex = null;
 let dragStartX = null;
 let dragStartY = null;
 
+//input stroke color
 let inputColor = '#000000';
 document.getElementById('color-input').addEventListener('input', () => {
     inputColor = document.getElementById('color-input').value;
@@ -21,6 +22,7 @@ document.getElementById('color-input').addEventListener('input', () => {
     console.log(inputColor);
 })
 
+//input stroke width
 let inputWidth = '1';
 document.getElementById('width-input').addEventListener('input', () => {
     inputWidth = document.getElementById('width-input').value;
@@ -248,7 +250,7 @@ function drawAllElements() {
         const box = getBoundingBox(selectedEl);
 
         ctx.lineWidth = 1;
-        ctx.setLineDash([5,5]);
+        ctx.setLineDash([5, 5]);
 
         ctx.strokeRect(box.x - 4, box.y - 4, box.w + 8, box.h + 8);
         ctx.setLineDash([]);
@@ -264,13 +266,19 @@ function isPointInTriangle(px, py, x1, y1, x2, y2, x3, y3) {
     return Math.abs(area1 + area2 + area3 - areaOrig) < 1;
 }
 
-canvas.addEventListener('mousedown', (e) => {
+function onMouseDown(e) {
     if (currentTool === 'tool-image') {
+
+        const rect = canvas.getBoundingClientRect();
+
+        let X = e.clientX - rect.left;
+        let Y = e.clientY - rect.top;
+
         elements.push({
             type: 'tool-image',
             url: 'https://picsum.photos/seed/' + Math.random() + '/200/200',
-            startX: e.offsetX,
-            startY: e.offsetY,
+            startX: X,
+            startY: Y,
         });
         drawAllElements();
         saveDrawing();
@@ -307,11 +315,17 @@ canvas.addEventListener('mousedown', (e) => {
 
         textarea.addEventListener('blur', () => {
             if (textarea.value !== "") {
+
+                const rect = canvas.getBoundingClientRect();
+
+                let X = e.clientX - rect.left;
+                let Y = e.clientY - rect.top;
+
                 elements.push({
                     type: 'tool-text',
                     text: textarea.value,
-                    startX: e.offsetX,
-                    startY: e.offsetY,
+                    startX: X,
+                    startY: Y,
                     color: inputColor
                 });
                 drawAllElements();
@@ -322,8 +336,10 @@ canvas.addEventListener('mousedown', (e) => {
     }
     else if (currentTool === 'tool-select') {
 
-        let x = e.offsetX;
-        let y = e.offsetY;
+        const rect = canvas.getBoundingClientRect();
+
+        let x = e.clientX - rect.left;
+        let y = e.clientY - rect.top;
 
         selectedElementIndex = null;
 
@@ -425,8 +441,9 @@ canvas.addEventListener('mousedown', (e) => {
     else {
         isDrawing = true;
         undoneElements = [];
-        let startX = e.offsetX;
-        let startY = e.offsetY;
+        const rect = canvas.getBoundingClientRect();
+        let startX = e.clientX - rect.left;
+        let startY = e.clientY - rect.top;
         if (currentTool === 'tool-brush') {
             elements.push({
                 type: currentTool,
@@ -447,11 +464,20 @@ canvas.addEventListener('mousedown', (e) => {
             });
         }
     }
+}
+
+// canvas.addEventListener('mousedown', (e) => {
+//     onMouseDown(e);
+// });
+canvas.addEventListener('pointerdown', (e) => {
+    onMouseDown(e);
 });
 
-canvas.addEventListener('mousemove', (e) => {
-    let currX = e.offsetX;
-    let currY = e.offsetY;
+function onMouseMove(e) {
+    const rect = canvas.getBoundingClientRect();
+
+    let currX = e.clientX - rect.left;
+    let currY = e.clientY - rect.top;
 
     if (currentTool === 'tool-select' && isDrawing && selectedElementIndex !== null) {
         let selectedElement = elements[selectedElementIndex];
@@ -488,9 +514,16 @@ canvas.addEventListener('mousemove', (e) => {
         elements[elements.length - 1].lastY = currY;
     }
     drawAllElements();
-})
+}
 
-canvas.addEventListener('mouseup', () => {
+// canvas.addEventListener('mousemove', (e) => {
+//     onMouseMove(e);
+// });
+canvas.addEventListener('pointermove', (e) => {
+    onMouseMove(e);
+});
+
+function onMouseUp() {
     isDrawing = false;
     if (elements.length > 0) {
         let element = elements[elements.length - 1];
@@ -499,7 +532,14 @@ canvas.addEventListener('mouseup', () => {
         }
     }
     saveDrawing();
-})
+}
+
+// canvas.addEventListener('mouseup', () => {
+//     onMouseUp();
+// });
+canvas.addEventListener('pointerup', () => {
+    onMouseUp();
+});
 
 canvas.addEventListener('dblclick', (e) => {
     if (currentTool !== 'tool-select') return;

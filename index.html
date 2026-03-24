@@ -9,6 +9,7 @@
   </head>
   <body>
     <div id="app">
+      <!-- top tool bar -->
       <header id="toolbar">
         <button class="tool-btn toolbar-btn" id="tool-select" title="Select">
           <svg
@@ -42,8 +43,6 @@
           </svg>
         </button>
 
-        <!-- <div class="hbar"></div> -->
-
         <button class="tool-btn toolbar-btn" id="tool-circle" title="Circle">
           <svg
             width="20"
@@ -59,8 +58,6 @@
           </svg>
         </button>
 
-        <!-- <div class="hbar"></div> -->
-
         <button class="tool-btn toolbar-btn" id="tool-square" title="Square">
           <svg
             width="20"
@@ -75,8 +72,6 @@
             <rect x="5" y="5" width="14" height="14" rx="2"></rect>
           </svg>
         </button>
-
-        <!-- <div class="hbar"></div> -->
 
         <button
           class="tool-btn toolbar-btn"
@@ -96,8 +91,6 @@
             <path d="M12 3L20 21H4L12 3Z"></path>
           </svg>
         </button>
-
-        <!-- <div class="hbar"></div> -->
 
         <button
           class="tool-btn tool-btn-selected toolbar-btn"
@@ -119,8 +112,6 @@
             ></path>
           </svg>
         </button>
-
-        <!-- <div class="hbar"></div> -->
 
         <button class="tool-btn toolbar-btn" id="tool-text" title="Text">
           <svg
@@ -272,7 +263,9 @@
           </svg>
         </button>
       </header>
+      <!-- main canvas -->
       <canvas id="drawing-board"></canvas>
+      <!-- side tool bar -->
       <aside id="stroke-bar">
         <input type="color" name="color-input" id="color-input">
         <input type="range" name="width-input" id="width-input" min="1" max="10" step="1" value="1">
