@@ -5,22 +5,32 @@ let elements = [];
 let undoneElements = [];
 let isDrawing = false;
 let currentTool = 'tool-brush';
-let inputColor = '#000000';
 let sliderTextVal = document.getElementById('slider-value-text');
+let selectedElementIndex = null;
+let dragStartX = null;
+let dragStartY = null;
+
+let inputColor = '#000000';
 document.getElementById('color-input').addEventListener('input', () => {
     inputColor = document.getElementById('color-input').value;
+    if (selectedElementIndex !== null) {
+        elements[selectedElementIndex].color = inputColor;
+        drawAllElements();
+        saveDrawing();
+    }
     console.log(inputColor);
 })
-let inputWidth = '1';
-document.getElementById('width-input').addEventListener('input',()=>{
-    inputWidth = document.getElementById('width-input').value;
-    sliderTextVal.innerHTML=inputWidth;
-})
 
-// if(!sessionStorage.getItem('myDoodle'))
-// {
-//     elements=JSON.parse(sessionStorage.getItem('myDooodle'));
-// }
+let inputWidth = '1';
+document.getElementById('width-input').addEventListener('input', () => {
+    inputWidth = document.getElementById('width-input').value;
+    sliderTextVal.innerHTML = inputWidth;
+    if (selectedElementIndex !== null) {
+        elements[selectedElementIndex].width = inputWidth;
+        drawAllElements();
+        saveDrawing();
+    }
+})
 
 window.addEventListener('load', () => {
     console.log(sessionStorage);
@@ -38,8 +48,6 @@ window.addEventListener('load', () => {
             }
             else {
                 drawAllElements();
-                // darkModeToggle.click();
-                // darkModeToggle.click();
             }
         }
         else
@@ -57,6 +65,21 @@ resizeCanvas();
 
 window.addEventListener('resize', resizeCanvas);
 
+const darkModeToggle = document.getElementById('theme-toggle');
+darkModeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    if (sessionStorage.getItem('theme')) {
+        if (sessionStorage.getItem('theme') === 'dark')
+            sessionStorage.setItem('theme', 'light');
+        else
+            sessionStorage.setItem('theme', 'dark');
+    }
+    else
+        sessionStorage.setItem('theme', 'dark');
+    console.log(sessionStorage);
+    drawAllElements();
+})
+
 const toolButtons = document.querySelectorAll('.tool-btn');
 
 for (let index = 0; index < toolButtons.length; index++) {
@@ -70,7 +93,81 @@ for (let index = 0; index < toolButtons.length; index++) {
         element.classList.add('tool-btn-selected');
         sessionStorage.setItem('last-tool', currentTool);
         console.log(currentTool);
+
+        selectedElementIndex = null;
+        drawAllElements();
     })
+}
+
+function getBoundingBox(element) {
+    let minX, minY, maxX, maxY;
+
+    if (element.type === 'tool-brush') {
+        minX = element.points[0].X; maxX = element.points[0].X;
+        minY = element.points[0].Y; maxY = element.points[0].Y;
+        for (let i = 1; i < element.points.length; i++) {
+            let pt = element.points[i];
+            if (pt.X < minX) minX = pt.X;
+            if (pt.X > maxX) maxX = pt.X;
+            if (pt.Y < minY) minY = pt.Y;
+            if (pt.Y > maxY) maxY = pt.Y;
+        }
+    }
+    else if (element.type === 'tool-circle') {
+
+        let w = element.lastX - element.startX;
+        let h = element.lastY - element.startY;
+        let r = Math.sqrt(w * w + h * h) / 2;
+        let cx = (element.startX + element.lastX) / 2;
+        let cy = (element.startY + element.lastY) / 2;
+        minX = cx - r; maxX = cx + r;
+        minY = cy - r; maxY = cy + r;
+
+    }
+    else if (element.type === 'tool-triangle') {
+
+        let x1 = element.startX, y1 = element.startY;
+        let x2 = element.lastX, y2 = element.lastY;
+        let x3 = 2 * element.startX - element.lastX, y3 = element.lastY;
+        minX = Math.min(x1, x2, x3); maxX = Math.max(x1, x2, x3);
+        minY = Math.min(y1, y2, y3); maxY = Math.max(y1, y2, y3);
+
+    }
+    else if (element.type === 'tool-square') {
+
+        let w = element.lastX - element.startX;
+        let h = element.lastY - element.startY;
+        let endCord = Math.max(Math.abs(w), Math.abs(h));
+        let trueLastX = element.startX + (Math.abs(w) / (w || 1)) * endCord;
+        let trueLastY = element.startY + (Math.abs(h) / (h || 1)) * endCord;
+        minX = Math.min(element.startX, trueLastX); maxX = Math.max(element.startX, trueLastX);
+        minY = Math.min(element.startY, trueLastY); maxY = Math.max(element.startY, trueLastY);
+
+    }
+    else if (element.type === 'tool-text') {
+
+        ctx.font = "24px sans-serif";
+        let w = ctx.measureText(element.text).width;
+        minX = element.startX; maxX = element.startX + w;
+        minY = element.startY; maxY = element.startY + 24;
+
+    }
+    else if (element.type === 'tool-image') {
+
+        minX = element.startX; maxX = element.startX + 200;
+        minY = element.startY; maxY = element.startY + 200;
+
+    }
+    else {
+
+        minX = Math.min(element.startX, element.lastX);
+        maxX = Math.max(element.startX, element.lastX);
+        minY = Math.min(element.startY, element.lastY);
+        maxY = Math.max(element.startY, element.lastY);
+
+    }
+
+    return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
 
 function drawAllElements() {
@@ -80,7 +177,7 @@ function drawAllElements() {
         if (element.type === 'tool-rect') {
             let width = element.lastX - element.startX;
             let height = element.lastY - element.startY;
-            ctx.lineWidth=element.width;
+            ctx.lineWidth = element.width;
             ctx.strokeStyle = element.color;
             ctx.strokeRect(element.startX, element.startY, width, height);
         }
@@ -90,7 +187,7 @@ function drawAllElements() {
             let radius = Math.sqrt((width * width) + (height * height)) / 2;
             let centerX = (element.startX + element.lastX) / 2;
             let centerY = (element.startY + element.lastY) / 2;
-            ctx.lineWidth=element.width;
+            ctx.lineWidth = element.width;
             ctx.strokeStyle = element.color;
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
@@ -100,13 +197,13 @@ function drawAllElements() {
             let width = element.lastX - element.startX;
             let height = element.lastY - element.startY;
             let endCord = Math.max(Math.abs(width), Math.abs(height));
-            ctx.lineWidth=element.width;
+            ctx.lineWidth = element.width;
             ctx.strokeStyle = element.color;
             ctx.strokeRect(element.startX, element.startY, (Math.abs(width) / width) * endCord, Math.abs(height) / height * endCord);
         }
         else if (element.type === 'tool-triangle') {
             ctx.strokeStyle = element.color;
-            ctx.lineWidth=element.width;
+            ctx.lineWidth = element.width;
             ctx.beginPath();
             ctx.moveTo(element.startX, element.startY);
             ctx.lineTo(element.lastX, element.lastY);
@@ -116,7 +213,7 @@ function drawAllElements() {
         }
         else if (element.type === 'tool-brush') {
             ctx.strokeStyle = element.color;
-            ctx.lineWidth=element.width;
+            ctx.lineWidth = element.width;
             ctx.beginPath();
             ctx.moveTo(element.points[0].X, element.points[0].Y);
             for (let i = 1; i < element.points.length; i++) {
@@ -146,24 +243,29 @@ function drawAllElements() {
         }
         console.log(elements);
     }
-    // console.log(elements);
+    if (selectedElementIndex !== null) {
+        const selectedEl = elements[selectedElementIndex];
+        const box = getBoundingBox(selectedEl);
+
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5,5]);
+
+        ctx.strokeRect(box.x - 4, box.y - 4, box.w + 8, box.h + 8);
+        ctx.setLineDash([]);
+    }
+}
+
+function isPointInTriangle(px, py, x1, y1, x2, y2, x3, y3) {
+    const areaOrig = Math.abs((x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1));
+    const area1 = Math.abs((x1 - px) * (y2 - py) - (x2 - px) * (y1 - py));
+    const area2 = Math.abs((x2 - px) * (y3 - py) - (x3 - px) * (y2 - py));
+    const area3 = Math.abs((x3 - px) * (y1 - py) - (x1 - px) * (y3 - py));
+
+    return Math.abs(area1 + area2 + area3 - areaOrig) < 1;
 }
 
 canvas.addEventListener('mousedown', (e) => {
     if (currentTool === 'tool-image') {
-        // const img = new Image();
-        // img.crossOrigin='anonymous';
-        // img.src = 'https://picsum.photos/200/200?random=' + Math.random();
-        // img.onload = () => {
-        //     elements.push({
-        //         type: 'image',
-        //         url: img.src,
-        //         startX: e.offsetX,
-        //         startY: e.offsetY
-        //     });
-        //     drawAllElements();
-        //     saveDrawing();
-        // }
         elements.push({
             type: 'tool-image',
             url: 'https://picsum.photos/seed/' + Math.random() + '/200/200',
@@ -199,7 +301,6 @@ canvas.addEventListener('mousedown', (e) => {
 
         document.body.appendChild(textarea);
 
-        // textarea.focus();
         setTimeout(() => {
             textarea.focus();
         }, 0)
@@ -219,6 +320,108 @@ canvas.addEventListener('mousedown', (e) => {
             textarea.remove();
         })
     }
+    else if (currentTool === 'tool-select') {
+
+        let x = e.offsetX;
+        let y = e.offsetY;
+
+        selectedElementIndex = null;
+
+        for (let index = elements.length - 1; index >= 0; index--) {
+            const element = elements[index];
+
+            let isHit = false;
+
+            if (element.type === 'tool-rect') {
+                const minX = Math.min(element.startX, element.lastX);
+                const maxX = Math.max(element.startX, element.lastX);
+                const minY = Math.min(element.startY, element.lastY);
+                const maxY = Math.max(element.startY, element.lastY);
+
+                if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+                    isHit = true;
+                }
+            }
+            else if (element.type === 'tool-circle') {
+                let w = element.lastX - element.startX;
+                let h = element.lastY - element.startY;
+                let radius = Math.sqrt((w * w) + (h * h)) / 2;
+                let centerX = (element.startX + element.lastX) / 2;
+                let centerY = (element.startY + element.lastY) / 2;
+
+                let dis = Math.sqrt((x - centerX) * (x - centerX) + (y - centerY) * (y - centerY));
+
+                if (dis < radius) {
+                    isHit = true;
+                }
+            }
+            else if (element.type === 'tool-image') {
+                if (x >= element.startX && x <= element.startX + 200 && y >= element.startY && y <= element.startY + 200) {
+                    isHit = true;
+                }
+            }
+            else if (element.type === 'tool-square') {
+                let w = element.lastX - element.startX;
+                let h = element.lastY - element.startY;
+                let endCord = Math.max(Math.abs(w), Math.abs(h));
+
+                let trueLastX = element.startX + (Math.abs(w) / w) * endCord;
+                let trueLastY = element.startY + (Math.abs(h) / h) * endCord;
+
+                const minX = Math.min(element.startX, trueLastX);
+                const maxX = Math.max(element.startX, trueLastX);
+                const minY = Math.min(element.startY, trueLastY);
+                const maxY = Math.max(element.startY, trueLastY);
+
+                if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+                    isHit = true;
+                }
+            }
+            else if (element.type === 'tool-triangle') {
+                let x1 = element.startX, y1 = element.startY;
+                let x2 = element.lastX, y2 = element.lastY;
+                let x3 = 2 * element.startX - element.lastX, y3 = element.lastY;
+
+                if (isPointInTriangle(x, y, x1, y1, x2, y2, x3, y3)) {
+                    isHit = true;
+                }
+            }
+            else if (element.type === 'tool-brush') {
+                for (let j = 0; j < element.points.length; j++) {
+                    let pt = element.points[j];
+
+                    let dis = Math.sqrt((x - pt.X) * (x - pt.X) + (y - pt.Y) * (y - pt.Y));
+
+                    if (dis < 10) {
+                        isHit = true;
+                        break;
+                    }
+                }
+            }
+            if (isHit) {
+                selectedElementIndex = index;
+                isDrawing = true;
+                dragStartX = x;
+                dragStartY = y;
+
+                let selectedEl = elements[selectedElementIndex];
+
+                if (selectedEl.color) {
+                    inputColor = selectedEl.color;
+                    document.getElementById('color-input').value = inputColor;
+                }
+
+                if (selectedEl.width) {
+                    inputWidth = selectedEl.width;
+                    document.getElementById('width-input').value = inputWidth;
+                    sliderTextVal.innerHTML = inputWidth;
+                }
+
+                break;
+            }
+        }
+        drawAllElements();
+    }
     else {
         isDrawing = true;
         undoneElements = [];
@@ -228,7 +431,8 @@ canvas.addEventListener('mousedown', (e) => {
             elements.push({
                 type: currentTool,
                 points: [{ X: startX, Y: startY }],
-                color: inputColor
+                color: inputColor,
+                width: inputWidth
             });
         }
         else {
@@ -248,6 +452,32 @@ canvas.addEventListener('mousedown', (e) => {
 canvas.addEventListener('mousemove', (e) => {
     let currX = e.offsetX;
     let currY = e.offsetY;
+
+    if (currentTool === 'tool-select' && isDrawing && selectedElementIndex !== null) {
+        let selectedElement = elements[selectedElementIndex];
+        let diffX = currX - dragStartX;
+        let diffY = currY - dragStartY;
+
+        if (selectedElement.type === 'tool-brush') {
+            for (let i = 0; i < selectedElement.points.length; i++) {
+                selectedElement.points[i].X += diffX;
+                selectedElement.points[i].Y += diffY;
+            }
+        }
+        else {
+            selectedElement.startX += diffX;
+            selectedElement.startY += diffY;
+            selectedElement.lastX += diffX;
+            selectedElement.lastY += diffY;
+        }
+
+        dragStartX = currX;
+        dragStartY = currY;
+
+        drawAllElements();
+        return;
+    }
+
     if (currentTool === 'tool-select') return;
     else if (!isDrawing) return;
     else if (currentTool === 'tool-brush') {
@@ -257,7 +487,6 @@ canvas.addEventListener('mousemove', (e) => {
         elements[elements.length - 1].lastX = currX;
         elements[elements.length - 1].lastY = currY;
     }
-    // console.log(elements);
     drawAllElements();
 })
 
@@ -270,37 +499,6 @@ canvas.addEventListener('mouseup', () => {
         }
     }
     saveDrawing();
-})
-
-function undo() {
-    if (elements.length !== 0) {
-        undoneElements.push(elements[elements.length - 1]);
-        elements.pop();
-        drawAllElements();
-        saveDrawing();
-    }
-}
-
-function redo() {
-    if (undoneElements.length !== 0) {
-        elements.push(undoneElements[undoneElements.length - 1]);
-        undoneElements.pop();
-        drawAllElements();
-        saveDrawing();
-    }
-}
-
-const undoBtn = document.getElementById('action-undo');
-undoBtn.addEventListener('click', undo);
-
-const redoBtn = document.getElementById('action-redo');
-redoBtn.addEventListener('click', redo)
-
-window.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z')
-        undo();
-    if ((e.ctrlKey || e.metaKey) && e.key === 'y')
-        redo();
 })
 
 canvas.addEventListener('dblclick', (e) => {
@@ -376,25 +574,33 @@ downloadPNG.addEventListener('click', () => {
     link.click();
 });
 
-const darkModeToggle = document.getElementById('theme-toggle');
-darkModeToggle.addEventListener('click', () => {
-    document.body.classList.toggle('dark-mode');
-    // if (ctx.strokeStyle === '#ffffff') {
-    //     // ctx.strokeStyle = 'black';
-    //     sessionStorage.setItem('theme', 'light');
-    // }
-    // else {
-    //     // ctx.strokeStyle = 'white';
-    //     sessionStorage.setItem('theme', 'dark');
-    // }
-    if (sessionStorage.getItem('theme')) {
-        if (sessionStorage.getItem('theme') === 'dark')
-            sessionStorage.setItem('theme', 'light');
-        else
-            sessionStorage.setItem('theme', 'dark');
+function undo() {
+    if (elements.length !== 0) {
+        undoneElements.push(elements[elements.length - 1]);
+        elements.pop();
+        drawAllElements();
+        saveDrawing();
     }
-    else
-        sessionStorage.setItem('theme', 'dark');
-    console.log(sessionStorage);
-    drawAllElements();
+}
+
+function redo() {
+    if (undoneElements.length !== 0) {
+        elements.push(undoneElements[undoneElements.length - 1]);
+        undoneElements.pop();
+        drawAllElements();
+        saveDrawing();
+    }
+}
+
+const undoBtn = document.getElementById('action-undo');
+undoBtn.addEventListener('click', undo);
+
+const redoBtn = document.getElementById('action-redo');
+redoBtn.addEventListener('click', redo)
+
+window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z')
+        undo();
+    if ((e.ctrlKey || e.metaKey) && e.key === 'y')
+        redo();
 })
