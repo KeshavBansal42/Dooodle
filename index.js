@@ -14,6 +14,7 @@ let dragStartY = null;
 let inputColor = '#000000';
 document.getElementById('color-input').addEventListener('input', () => {
     inputColor = document.getElementById('color-input').value;
+    sessionStorage.setItem('color', inputColor);
     if (selectedElementIndex !== null) {
         elements[selectedElementIndex].color = inputColor;
         drawAllElements();
@@ -27,6 +28,7 @@ let inputWidth = '1';
 document.getElementById('width-input').addEventListener('input', () => {
     inputWidth = document.getElementById('width-input').value;
     sliderTextVal.innerHTML = inputWidth;
+    sessionStorage.setItem('width',inputWidth);
     if (selectedElementIndex !== null) {
         elements[selectedElementIndex].width = inputWidth;
         drawAllElements();
@@ -54,6 +56,15 @@ window.addEventListener('load', () => {
         }
         else
             drawAllElements();
+    }
+    if (sessionStorage.getItem('color')) {
+        inputColor = sessionStorage.getItem('color');
+        document.getElementById('color-input').value = sessionStorage.getItem('color');
+    }
+    if(sessionStorage.getItem('width')) {
+        inputWidth = sessionStorage.getItem('width');
+        sliderTextVal.innerHTML = inputWidth;
+        document.getElementById('width-input').value = sessionStorage.getItem('width');
     }
 })
 
@@ -249,11 +260,16 @@ function drawAllElements() {
         const selectedEl = elements[selectedElementIndex];
         const box = getBoundingBox(selectedEl);
 
+        let currentStroke = ctx.strokeStyle;
+        ctx.strokeStyle = 'black';
+
         ctx.lineWidth = 1;
         ctx.setLineDash([5, 5]);
 
         ctx.strokeRect(box.x - 4, box.y - 4, box.w + 8, box.h + 8);
+
         ctx.setLineDash([]);
+        ctx.strokeStyle = currentStroke;
     }
 }
 
