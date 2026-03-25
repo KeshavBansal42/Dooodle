@@ -268,13 +268,13 @@
             </svg>
           </button>
         </header>
-        <input type="color" name="bg-color-picker" id="bg-color-picker" />
+        <input type="color" name="bg-color-picker" id="bg-color-picker" title="Background Color"/>
       </header>
       <!-- main canvas -->
       <canvas id="drawing-board"></canvas>
       <!-- side tool bar -->
       <aside id="stroke-bar">
-        <input type="color" name="color-input" id="color-input" />
+        <input type="color" name="color-input" id="color-input" title="Stroke Color"/>
         <input
           type="range"
           name="width-input"
@@ -283,9 +283,10 @@
           max="10"
           step="1"
           value="1"
+          title="Stroke Width/Font Size"
         />
         <div id="slider-value">
-          <p id="slider-value-text">1</p>
+          <p id="slider-value-text" title="Stroke Width/Font Size">1</p>
         </div>
       </aside>
     </div>
