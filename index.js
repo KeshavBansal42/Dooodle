@@ -37,6 +37,7 @@ document.getElementById('width-input').addEventListener('input', () => {
 });
 
 let bgcolor = '#ffffff';
+// document.getElementById('bg-color-picker').value = '#ffffff';
 document.getElementById('bg-color-picker').addEventListener('input',()=> {
     bgcolor = document.getElementById('bg-color-picker').value;
     sessionStorage.setItem('bgcolor',bgcolor);
@@ -624,8 +625,12 @@ function saveDrawing() {
 
 const clear = document.getElementById('action-clear');
 clear.addEventListener('click', () => {
+    undoneElements.push({
+        type: 'list',
+        list: elements
+    });
     elements = [];
-    undoneElements = [];
+    // undoneElements = [];
     drawAllElements();
     saveDrawing();
 })
@@ -650,7 +655,10 @@ function undo() {
 
 function redo() {
     if (undoneElements.length !== 0) {
-        elements.push(undoneElements[undoneElements.length - 1]);
+        if(undoneElements[undoneElements.length-1].type==='list')
+            elements = undoneElements[undoneElements.length-1].list;
+        else
+            elements.push(undoneElements[undoneElements.length - 1]);
         undoneElements.pop();
         drawAllElements();
         saveDrawing();

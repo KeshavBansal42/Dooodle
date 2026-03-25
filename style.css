@@ -105,16 +105,18 @@ svg {
 #bg-color-picker {
   /* margin: 0.4rem 0.4rem 1rem 0.4rem; */
   appearance: none;
-  height: 3.6rem;
-  width: 3.6rem;
+  height: 3.2rem;
+  width: 3.2rem;
   border-radius: 100%;
   cursor: pointer;
   border: none;
-  background-color: transparent;
+  /* border: 2px solid var(--btn-color); */
+  box-shadow: 0 0 1rem var(--shadow-color);
+  background-color: var(--bg-color);
 }
 
 #bg-color-picker::-webkit-color-swatch {
-  border: 0.4rem solid var(--bg-color);
+  border: 0.2rem solid var(--bg-color);
   border-radius: 100%;
 }
 
