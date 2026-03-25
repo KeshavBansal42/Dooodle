@@ -4,6 +4,7 @@ const ctx = canvas.getContext('2d');
 let elements = [];
 let undoneElements = [];
 let isDrawing = false;
+let isResizing = false;
 let currentTool = 'tool-brush';
 let sliderTextVal = document.getElementById('slider-value-text'); //display for the selected width
 let selectedElementIndex = null;
@@ -164,14 +165,14 @@ function getBoundingBox(element) {
         minY = Math.min(element.startY, trueLastY); maxY = Math.max(element.startY, trueLastY);
 
     }
-    // else if (element.type === 'tool-text') {
+    else if (element.type === 'tool-text') {
 
-    //     ctx.font = "24px sans-serif";
-    //     let w = ctx.measureText(element.text).width;
-    //     minX = element.startX; maxX = element.startX + w;
-    //     minY = element.startY; maxY = element.startY + 24;
+        ctx.font = "24px sans-serif";
+        let w = ctx.measureText(element.text).width;
+        minX = element.startX; maxX = element.startX + w;
+        minY = element.startY; maxY = element.startY + 24;
 
-    // }
+    }
     else if (element.type === 'tool-image') {
 
         minX = element.startX; maxX = element.lastX;
@@ -282,14 +283,25 @@ function drawAllElements() {
         const box = getBoundingBox(selectedEl);
 
         let currentStroke = ctx.strokeStyle;
+        let currentFill = ctx.fillStyle;
+
         ctx.strokeStyle = 'black';
 
         ctx.lineWidth = 1;
         ctx.setLineDash([5, 5]);
 
-        ctx.strokeRect(box.x - 4, box.y - 4, box.w + 8, box.h + 8);
-
+        ctx.strokeRect(box.x - 10, box.y - 10, box.w + 20, box.h + 20);
         ctx.setLineDash([]);
+
+        ctx.fillStyle = 'white';
+
+        let handleX = box.x + box.w + 10;
+        let handleY = box.y + box.h + 10;
+
+        ctx.fillRect(handleX - 5, handleY - 5, 10, 10);
+        ctx.strokeRect(handleX - 5, handleY - 5, 10, 10);
+
+        ctx.fillStyle = currentFill;
         ctx.strokeStyle = currentStroke;
     }
 }
@@ -372,11 +384,23 @@ function onMouseDown(e) {
         })
     }
     else if (currentTool === 'tool-select') {
-
         const rect = canvas.getBoundingClientRect();
 
         let x = e.clientX - rect.left;
         let y = e.clientY - rect.top;
+
+        if (selectedElementIndex !== null) {
+            let box = getBoundingBox(elements[selectedElementIndex]);
+            let handleX = box.x + box.w;
+            let handleY = box.y + box.h;
+
+            if (Math.abs(x - handleX) <= 10 && Math.abs(y - handleY) <= 10) {
+                isResizing = true;
+                dragStartX = x;
+                dragStartY = y;
+                return;
+            }
+        }
 
         selectedElementIndex = null;
 
@@ -522,6 +546,42 @@ function onMouseMove(e) {
     let currX = e.clientX - rect.left;
     let currY = e.clientY - rect.top;
 
+    if (currentTool === 'tool-select' && isResizing && selectedElementIndex !== null) {
+        let diffX = currX - dragStartX;
+        let diffY = currY - dragStartY;
+        let selectedEl = elements[selectedElementIndex];
+
+        if (selectedEl.type !== 'tool-brush' && selectedEl.type !== 'tool-text') {
+            selectedEl.lastX += diffX;
+            selectedEl.lastY += diffY;
+
+            dragStartX = currX;
+            dragStartY = currY;
+
+            drawAllElements();
+            saveDrawing();
+            return;
+        }
+
+        else if (selectedEl.type === 'tool-brush') {
+            let box = getBoundingBox(selectedEl);
+            let startX = box.x;
+            let startY = box.y;
+            let lastX = box.x + box.w;
+            let lastY = box.y + box.h;
+            let scaleX = (currX - startX) / (lastX - startX);
+            let scaleY = (currY - startY) / (lastY - startY);
+
+            for (let i = 0; i < selectedEl.points.length; i++) {
+                selectedEl.points[i].X = Math.round(startX + (selectedEl.points[i].X - startX) * scaleX);
+                selectedEl.points[i].Y = Math.round(startY + (selectedEl.points[i].Y - startY) * scaleY);
+            }
+            drawAllElements();
+            saveDrawing();
+            return;
+        }
+    }
+
     if (currentTool === 'tool-select' && isDrawing && selectedElementIndex !== null) {
         let selectedElement = elements[selectedElementIndex];
         let diffX = currX - dragStartX;
@@ -572,6 +632,7 @@ canvas.addEventListener('pointermove', (e) => {
 
 function onMouseUp() {
     isDrawing = false;
+    isResizing = false;
     if (elements.length > 0) {
         let element = elements[elements.length - 1];
         if (element.type !== 'tool-brush' && element.startX === element.lastX && element.startY === element.lastY) {
