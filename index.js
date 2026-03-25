@@ -38,9 +38,9 @@ document.getElementById('width-input').addEventListener('input', () => {
 
 let bgcolor = '#ffffff';
 // document.getElementById('bg-color-picker').value = '#ffffff';
-document.getElementById('bg-color-picker').addEventListener('input',()=> {
+document.getElementById('bg-color-picker').addEventListener('input', () => {
     bgcolor = document.getElementById('bg-color-picker').value;
-    sessionStorage.setItem('bgcolor',bgcolor);
+    sessionStorage.setItem('bgcolor', bgcolor);
     drawAllElements();
 })
 
@@ -68,10 +68,9 @@ window.addEventListener('load', () => {
         sliderTextVal.innerHTML = inputWidth;
         document.getElementById('width-input').value = sessionStorage.getItem('width');
     }
-    if (sessionStorage.getItem('bgcolor'))
-    {
+    if (sessionStorage.getItem('bgcolor')) {
         bgcolor = sessionStorage.getItem('bgcolor');
-        document.getElementById('bg-color-picker').value=sessionStorage.getItem('bgcolor');
+        document.getElementById('bg-color-picker').value = sessionStorage.getItem('bgcolor');
     }
     drawAllElements();
 })
@@ -165,14 +164,14 @@ function getBoundingBox(element) {
         minY = Math.min(element.startY, trueLastY); maxY = Math.max(element.startY, trueLastY);
 
     }
-    else if (element.type === 'tool-text') {
+    // else if (element.type === 'tool-text') {
 
-        ctx.font = "24px sans-serif";
-        let w = ctx.measureText(element.text).width;
-        minX = element.startX; maxX = element.startX + w;
-        minY = element.startY; maxY = element.startY + 24;
+    //     ctx.font = "24px sans-serif";
+    //     let w = ctx.measureText(element.text).width;
+    //     minX = element.startX; maxX = element.startX + w;
+    //     minY = element.startY; maxY = element.startY + 24;
 
-    }
+    // }
     else if (element.type === 'tool-image') {
 
         minX = element.startX; maxX = element.startX + 200;
@@ -440,6 +439,12 @@ function onMouseDown(e) {
                     }
                 }
             }
+            else if (element.type === 'tool-text') {
+                let width = ctx.measureText(element.text).width;
+                if (x >= element.startX && x <= element.startX + width && y >= element.startY && y <= element.startY + 24) {
+                    isHit = true;
+                }
+            }
             if (isHit) {
                 selectedElementIndex = index;
                 isDrawing = true;
@@ -516,6 +521,10 @@ function onMouseMove(e) {
                 selectedElement.points[i].Y += diffY;
             }
         }
+        else if (selectedElement.type === 'tool-text') {
+            selectedElement.startX += diffX;
+            selectedElement.startY += diffY;
+        }
         else {
             selectedElement.startX += diffX;
             selectedElement.startY += diffY;
@@ -580,15 +589,8 @@ canvas.addEventListener('dblclick', (e) => {
                 textarea.style.top = element.startY - 2 + 'px';
                 textarea.style.background = 'transparent';
                 textarea.style.border = '1px dashed';
-                if (sessionStorage.getItem('theme')) {
-                    if (sessionStorage.getItem('theme') === 'light') {
-                        textarea.style.borderColor = 'black';
-                        textarea.style.color = element.color;
-                    } else {
-                        textarea.style.borderColor = 'white';
-                        textarea.style.color = element.color;
-                    }
-                }
+                textarea.style.borderColor = 'black';
+                textarea.style.color = element.color;
                 textarea.style.outline = 'none';
                 textarea.style.lineHeight = '1';
 
@@ -655,8 +657,8 @@ function undo() {
 
 function redo() {
     if (undoneElements.length !== 0) {
-        if(undoneElements[undoneElements.length-1].type==='list')
-            elements = undoneElements[undoneElements.length-1].list;
+        if (undoneElements[undoneElements.length - 1].type === 'list')
+            elements = undoneElements[undoneElements.length - 1].list;
         else
             elements.push(undoneElements[undoneElements.length - 1]);
         undoneElements.pop();
