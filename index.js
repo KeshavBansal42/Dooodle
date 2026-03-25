@@ -6,6 +6,7 @@ let undoneElements = [];
 let clearedCanvas = [];
 let isDrawing = false;
 let isResizing = false;
+let isErasing = false;
 let currentTool = 'tool-brush';
 let sliderTextVal = document.getElementById('slider-value-text'); //display for the selected width
 let selectedElementIndex = null;
@@ -319,7 +320,85 @@ function isPointInTriangle(px, py, x1, y1, x2, y2, x3, y3) {
     return Math.abs(area1 + area2 + area3 - areaOrig) < 1;
 }
 
+function isHit(x, y, element) {
+    if (element.type === 'tool-rect') {
+        const minX = Math.min(element.startX, element.lastX);
+        const maxX = Math.max(element.startX, element.lastX);
+        const minY = Math.min(element.startY, element.lastY);
+        const maxY = Math.max(element.startY, element.lastY);
+
+        if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+            return true;
+        }
+    }
+    else if (element.type === 'tool-circle') {
+        let w = element.lastX - element.startX;
+        let h = element.lastY - element.startY;
+        let radius = Math.sqrt((w * w) + (h * h)) / 2;
+        let centerX = (element.startX + element.lastX) / 2;
+        let centerY = (element.startY + element.lastY) / 2;
+
+        let dis = Math.sqrt((x - centerX) * (x - centerX) + (y - centerY) * (y - centerY));
+
+        if (dis < radius) {
+            return true;
+        }
+    }
+    else if (element.type === 'tool-image') {
+        if (x >= element.startX && x <= element.lastX && y >= element.startY && y <= element.lastY) {
+            return true;
+        }
+    }
+    else if (element.type === 'tool-square') {
+        let w = element.lastX - element.startX;
+        let h = element.lastY - element.startY;
+        let endCord = Math.max(Math.abs(w), Math.abs(h));
+
+        let trueLastX = element.startX + (Math.abs(w) / w) * endCord;
+        let trueLastY = element.startY + (Math.abs(h) / h) * endCord;
+
+        const minX = Math.min(element.startX, trueLastX);
+        const maxX = Math.max(element.startX, trueLastX);
+        const minY = Math.min(element.startY, trueLastY);
+        const maxY = Math.max(element.startY, trueLastY);
+
+        if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+            return true;
+        }
+    }
+    else if (element.type === 'tool-triangle') {
+        let x1 = element.startX, y1 = element.startY;
+        let x2 = element.lastX, y2 = element.lastY;
+        let x3 = 2 * element.startX - element.lastX, y3 = element.lastY;
+
+        if (isPointInTriangle(x, y, x1, y1, x2, y2, x3, y3)) {
+            return true;
+        }
+    }
+    else if (element.type === 'tool-brush') {
+        for (let j = 0; j < element.points.length; j++) {
+            let pt = element.points[j];
+
+            let dis = Math.sqrt((x - pt.X) * (x - pt.X) + (y - pt.Y) * (y - pt.Y));
+
+            if (dis < 10) {
+                return true;
+            }
+        }
+    }
+    else if (element.type === 'tool-text') {
+        let width = ctx.measureText(element.text).width;
+        if (x >= element.startX && x <= element.startX + width && y >= element.startY && y <= element.startY + element.width * 6) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function onMouseDown(e) {
+    if (currentTool === 'tool-eraser') {
+        isErasing = true;
+    }
     if (currentTool === 'tool-image') {
         isDrawing = true;
         const rect = canvas.getBoundingClientRect();
@@ -405,81 +484,7 @@ function onMouseDown(e) {
         for (let index = elements.length - 1; index >= 0; index--) {
             const element = elements[index];
 
-            let isHit = false;
-
-            if (element.type === 'tool-rect') {
-                const minX = Math.min(element.startX, element.lastX);
-                const maxX = Math.max(element.startX, element.lastX);
-                const minY = Math.min(element.startY, element.lastY);
-                const maxY = Math.max(element.startY, element.lastY);
-
-                if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-                    isHit = true;
-                }
-            }
-            else if (element.type === 'tool-circle') {
-                let w = element.lastX - element.startX;
-                let h = element.lastY - element.startY;
-                let radius = Math.sqrt((w * w) + (h * h)) / 2;
-                let centerX = (element.startX + element.lastX) / 2;
-                let centerY = (element.startY + element.lastY) / 2;
-
-                let dis = Math.sqrt((x - centerX) * (x - centerX) + (y - centerY) * (y - centerY));
-
-                if (dis < radius) {
-                    isHit = true;
-                }
-            }
-            else if (element.type === 'tool-image') {
-                if (x >= element.startX && x <= element.lastX && y >= element.startY && y <= element.lastY) {
-                    isHit = true;
-                }
-            }
-            else if (element.type === 'tool-square') {
-                let w = element.lastX - element.startX;
-                let h = element.lastY - element.startY;
-                let endCord = Math.max(Math.abs(w), Math.abs(h));
-
-                let trueLastX = element.startX + (Math.abs(w) / w) * endCord;
-                let trueLastY = element.startY + (Math.abs(h) / h) * endCord;
-
-                const minX = Math.min(element.startX, trueLastX);
-                const maxX = Math.max(element.startX, trueLastX);
-                const minY = Math.min(element.startY, trueLastY);
-                const maxY = Math.max(element.startY, trueLastY);
-
-                if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-                    isHit = true;
-                }
-            }
-            else if (element.type === 'tool-triangle') {
-                let x1 = element.startX, y1 = element.startY;
-                let x2 = element.lastX, y2 = element.lastY;
-                let x3 = 2 * element.startX - element.lastX, y3 = element.lastY;
-
-                if (isPointInTriangle(x, y, x1, y1, x2, y2, x3, y3)) {
-                    isHit = true;
-                }
-            }
-            else if (element.type === 'tool-brush') {
-                for (let j = 0; j < element.points.length; j++) {
-                    let pt = element.points[j];
-
-                    let dis = Math.sqrt((x - pt.X) * (x - pt.X) + (y - pt.Y) * (y - pt.Y));
-
-                    if (dis < 10) {
-                        isHit = true;
-                        break;
-                    }
-                }
-            }
-            else if (element.type === 'tool-text') {
-                let width = ctx.measureText(element.text).width;
-                if (x >= element.startX && x <= element.startX + width && y >= element.startY && y <= element.startY + element.width * 6) {
-                    isHit = true;
-                }
-            }
-            if (isHit) {
+            if (isHit(x, y, element)) {
                 selectedElementIndex = index;
                 isDrawing = true;
                 dragStartX = x;
@@ -543,6 +548,19 @@ function onMouseMove(e) {
 
     let currX = e.clientX - rect.left;
     let currY = e.clientY - rect.top;
+
+    if (currentTool === 'tool-eraser' && isErasing) {
+        for (let i = 0; i < elements.length; i++) {
+            const element = elements[i];
+            if (isHit(currX, currY, element)) {
+                element.type += ' ';
+                elements.push({
+                    type: 'erased',
+                    index: i
+                });
+            }
+        }
+    }
 
     if (currentTool === 'tool-select' && isResizing && selectedElementIndex !== null) {
         let diffX = currX - dragStartX;
@@ -631,6 +649,7 @@ canvas.addEventListener('pointermove', (e) => {
 function onMouseUp() {
     isDrawing = false;
     isResizing = false;
+    isErasing = false;
     if (elements.length > 0) {
         let element = elements[elements.length - 1];
         if (element.type !== 'tool-brush' && element.startX === element.lastX && element.startY === element.lastY) {
@@ -730,7 +749,12 @@ downloadPNG.addEventListener('click', () => {
 
 function undo() {
     if (elements.length !== 0) {
-        if (elements[elements.length - 1].type === 'clear') {
+        if (elements[elements.length - 1].type === 'erased') {
+            undoneElements.push(elements[elements.length - 1]);
+            elements[elements[elements.length - 1].index].type = elements[elements[elements.length - 1].index].type.trimEnd();
+            elements.pop();
+        }
+        else if (elements[elements.length - 1].type === 'clear') {
             undoneElements.push(elements[elements.length - 1]);
             elements.pop();
             elements = [...elements, ...clearedCanvas[clearedCanvas.length - 1]];
@@ -746,7 +770,12 @@ function undo() {
 
 function redo() {
     if (undoneElements.length !== 0) {
-        if (undoneElements[undoneElements.length - 1].type === 'clear') {
+        if (undoneElements[undoneElements.length - 1].type === 'erased') {
+            elements[undoneElements[undoneElements.length - 1].index].type += ' ';
+            elements.push(undoneElements[undoneElements.length - 1]);
+            undoneElements.pop();
+        }
+        else if (undoneElements[undoneElements.length - 1].type === 'clear') {
             undoneElements.pop();
             clear.click();
         }
@@ -792,6 +821,8 @@ window.addEventListener('keydown', (e) => {
     else if (e.key === '7')
         document.getElementById('tool-text').click();
     else if (e.key === '8')
+        document.getElementById('tool-eraser').click();
+    else if (e.key === '9')
         document.getElementById('tool-image').click();
     else if (e.key === 't')
         document.getElementById('theme-toggle').click();
