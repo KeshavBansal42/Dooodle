@@ -3,6 +3,7 @@ const ctx = canvas.getContext('2d');
 
 let elements = [];
 let undoneElements = [];
+let clearedCanvas = [];
 let isDrawing = false;
 let isResizing = false;
 let currentTool = 'tool-brush';
@@ -713,11 +714,9 @@ function saveDrawing() {
 
 const clear = document.getElementById('action-clear');
 clear.addEventListener('click', () => {
-    undoneElements.push({
-        type: 'list',
-        list: elements
-    });
+    clearedCanvas.push(elements);
     elements = [];
+    elements.push({ type: 'clear' });
     // undoneElements = [];
     drawAllElements();
     saveDrawing();
@@ -734,8 +733,15 @@ downloadPNG.addEventListener('click', () => {
 
 function undo() {
     if (elements.length !== 0) {
-        undoneElements.push(elements[elements.length - 1]);
-        elements.pop();
+        if (elements[elements.length - 1].type === 'clear') {
+            undoneElements.push(elements[elements.length - 1]);
+            elements.pop();
+            elements = [...elements, ...clearedCanvas[clearedCanvas.length - 1]];
+        }
+        else {
+            undoneElements.push(elements[elements.length - 1]);
+            elements.pop();
+        }
         drawAllElements();
         saveDrawing();
     }
@@ -743,11 +749,14 @@ function undo() {
 
 function redo() {
     if (undoneElements.length !== 0) {
-        if (undoneElements[undoneElements.length - 1].type === 'list')
-            elements = undoneElements[undoneElements.length - 1].list;
-        else
+        if (undoneElements[undoneElements.length - 1].type === 'clear') {
+            undoneElements.pop();
+            clear.click();
+        }
+        else {
             elements.push(undoneElements[undoneElements.length - 1]);
-        undoneElements.pop();
+            undoneElements.pop();
+        }
         drawAllElements();
         saveDrawing();
     }
