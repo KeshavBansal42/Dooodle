@@ -29,7 +29,10 @@ document.getElementById('color-input').addEventListener('input', () => {
 let inputWidth = '1';
 document.getElementById('width-input').addEventListener('input', () => {
     inputWidth = document.getElementById('width-input').value;
-    sliderTextVal.innerHTML = inputWidth;
+    if (currentTool !== 'tool-text')
+        sliderTextVal.innerHTML = inputWidth;
+    else
+        sliderTextVal.innerHTML = inputWidth * 6;
     sessionStorage.setItem('width', inputWidth);
     if (selectedElementIndex !== null) {
         elements[selectedElementIndex].width = inputWidth;
@@ -168,10 +171,10 @@ function getBoundingBox(element) {
     }
     else if (element.type === 'tool-text') {
 
-        ctx.font = "24px sans-serif";
+        ctx.font = `${element.width * 6}px sans-serif`;
         let w = ctx.measureText(element.text).width;
         minX = element.startX; maxX = element.startX + w;
-        minY = element.startY; maxY = element.startY + 24;
+        minY = element.startY; maxY = element.startY + element.width * 6;
 
     }
     else if (element.type === 'tool-image') {
@@ -247,7 +250,7 @@ function drawAllElements() {
             ctx.stroke();
         }
         else if (element.type === 'tool-text') {
-            ctx.font = "24px sans-serif";
+            ctx.font = `${element.width * 6}px sans-serif`;
             ctx.fillStyle = element.color;
             ctx.textBaseline = 'top';
             ctx.fillText(element.text, element.startX, element.startY);
@@ -340,20 +343,13 @@ function onMouseDown(e) {
         textarea.style.top = (e.clientY - 1) + 'px';
         textarea.style.background = 'transparent';
         textarea.style.border = '1px dashed';
-        if (sessionStorage.getItem('theme')) {
-            if (sessionStorage.getItem('theme') === 'light') {
-                textarea.style.borderColor = 'black';
-                textarea.style.color = inputColor;
-            } else {
-                textarea.style.borderColor = 'white';
-                textarea.style.color = inputColor;
-            }
-        }
+        textarea.style.borderColor = 'black';
+        textarea.style.color = inputColor;
         textarea.style.outline = 'none';
         textarea.style.lineHeight = '1';
 
         textarea.style.fontFamily = 'sans-serif';
-        textarea.style.fontSize = '24px';
+        textarea.style.fontSize = `${inputWidth * 6}px`;
         textarea.style.margin = '0';
         textarea.style.padding = '0';
 
@@ -376,7 +372,8 @@ function onMouseDown(e) {
                     text: textarea.value,
                     startX: X,
                     startY: Y,
-                    color: inputColor
+                    color: inputColor,
+                    width: inputWidth
                 });
                 drawAllElements();
                 saveDrawing();
@@ -478,7 +475,7 @@ function onMouseDown(e) {
             }
             else if (element.type === 'tool-text') {
                 let width = ctx.measureText(element.text).width;
-                if (x >= element.startX && x <= element.startX + width && y >= element.startY && y <= element.startY + 24) {
+                if (x >= element.startX && x <= element.startX + width && y >= element.startY && y <= element.startY + element.width * 6) {
                     isHit = true;
                 }
             }
@@ -682,7 +679,7 @@ canvas.addEventListener('dblclick', (e) => {
                 textarea.style.lineHeight = '1';
 
                 textarea.style.fontFamily = 'sans-serif';
-                textarea.style.fontSize = '24px'
+                textarea.style.fontSize = `${element.width * 6}px`
                 textarea.style.margin = '0';
                 textarea.style.padding = '0';
 
