@@ -174,8 +174,8 @@ function getBoundingBox(element) {
     // }
     else if (element.type === 'tool-image') {
 
-        minX = element.startX; maxX = element.startX + 200;
-        minY = element.startY; maxY = element.startY + 200;
+        minX = element.startX; maxX = element.lastX;
+        minY = element.startY; maxY = element.lastY;
 
     }
     else {
@@ -255,13 +255,25 @@ function drawAllElements() {
             renderImg.crossOrigin = 'anonymous';
             renderImg.src = element.url;
             if (renderImg.complete) {
-                ctx.drawImage(renderImg, element.startX, element.startY, 200, 200);
+                let width = element.lastX - element.startX;
+                let height = element.lastY - element.startY;
+                ctx.drawImage(renderImg, element.startX, element.startY, width, height);
             }
             else {
                 renderImg.onload = () => {
-                    ctx.drawImage(renderImg, element.startX, element.startY, 200, 200);
+                    let width = element.lastX - element.startX;
+                    let height = element.lastY - element.startY;
+                    ctx.drawImage(renderImg, element.startX, element.startY, width, height);
+                    // ctx.drawImage(renderImg, element.startX, element.startY, 200, 200);
                 }
             }
+        }
+        else if (element.type === 'tool-image-temp') {
+            let width = element.lastX - element.startX;
+            let height = element.lastY - element.startY;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(element.startX, element.startY, width, height);
+            ctx.setLineDash([]);
         }
         console.log(elements);
     }
@@ -293,20 +305,20 @@ function isPointInTriangle(px, py, x1, y1, x2, y2, x3, y3) {
 
 function onMouseDown(e) {
     if (currentTool === 'tool-image') {
-
+        isDrawing = true;
         const rect = canvas.getBoundingClientRect();
 
         let X = e.clientX - rect.left;
         let Y = e.clientY - rect.top;
 
         elements.push({
-            type: 'tool-image',
-            url: 'https://picsum.photos/seed/' + Math.random() + '/200/200',
+            type: 'tool-image-temp',
+            url: '',
             startX: X,
             startY: Y,
+            lastX: X,
+            lastY: Y
         });
-        drawAllElements();
-        saveDrawing();
     }
     else if (currentTool === 'tool-text') {
         const textarea = document.createElement('textarea');
@@ -397,7 +409,7 @@ function onMouseDown(e) {
                 }
             }
             else if (element.type === 'tool-image') {
-                if (x >= element.startX && x <= element.startX + 200 && y >= element.startY && y <= element.startY + 200) {
+                if (x >= element.startX && x <= element.lastX && y >= element.startY && y <= element.lastY) {
                     isHit = true;
                 }
             }
@@ -566,6 +578,19 @@ function onMouseUp() {
             elements.pop();
         }
     }
+    if (elements.length > 0) {
+        if (elements[elements.length - 1].type === 'tool-image-temp') {
+            elements[elements.length - 1].type = 'tool-image';
+            elements[elements.length - 1].startX = Math.min(elements[elements.length - 1].startX, elements[elements.length - 1].lastX);
+            elements[elements.length - 1].lastX = Math.max(elements[elements.length - 1].startX, elements[elements.length - 1].lastX);
+            elements[elements.length - 1].startY = Math.min(elements[elements.length - 1].startY, elements[elements.length - 1].lastY);
+            elements[elements.length - 1].lastY = Math.max(elements[elements.length - 1].startY, elements[elements.length - 1].lastY);
+            let width = Math.round(elements[elements.length - 1].lastX - elements[elements.length - 1].startX);
+            let height = Math.round(elements[elements.length - 1].lastY - elements[elements.length - 1].startY);
+            elements[elements.length - 1].url = 'https://picsum.photos/seed/' + Math.random() + '/' + width + '/' + height;
+        }
+    }
+    drawAllElements();
     saveDrawing();
 }
 
