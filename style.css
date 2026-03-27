@@ -49,12 +49,12 @@ body {
   position: absolute;
   top: 1rem;
   left: 50%;
-  transform: translateX(-50%); /* Centers it perfectly */
+  transform: translateX(-50%);
   z-index: 10;
   display: flex;
-  gap: 1rem; /* Space between toolbar and picker */
+  gap: 1rem;
   align-items: center;
-  flex-wrap: wrap; /* Lets them stack if the phone screen is super narrow! */
+  flex-wrap: wrap;
   justify-content: center;
   width: max-content;
   max-width: 95vw;
@@ -139,6 +139,7 @@ svg {
 /* beginning of the styles for the sidebar */
 
 #stroke-bar {
+  width: fit-content;
   position: absolute;
   align-self: center;
   right: 0;
@@ -156,8 +157,10 @@ svg {
 #color-input {
   margin: 0.4rem 0.4rem 1rem 0.4rem;
   appearance: none;
-  height: 2rem;
+  min-height: 2rem;
+  min-width: 2rem;
   width: 2rem;
+  height: 2rem;
   border-radius: 100%;
   cursor: pointer;
   border: none;
@@ -181,13 +184,12 @@ svg {
   margin: 0;
   display: grid;
   place-items: center;
-  position: relative;
   border: 1px;
   border-radius: 100%;
   border-color: var(--btn-color);
   border-style: dashed;
-  height: 2rem;
-  width: 2rem;
+  min-height: 2rem;
+  min-width: 2rem;
   align-items: center;
   justify-content: center;
   margin: 0.4rem 0 0.2rem 0;
@@ -203,3 +205,41 @@ svg {
 }
 
 /* end of the styles for the sidebar */
+
+@media (max-width: 800px) {
+  #top-ui-container {
+    position: absolute;
+    top: 50%;
+    left: 80%;
+    transform: translateY(-50%);
+    flex-direction: column;
+  }
+
+  #toolbar {
+    /* position: absolute; */
+    flex-direction: column;
+  }
+
+  .hbar {
+    width: 1.4rem;
+    height: 0.1rem;
+  }
+
+  #stroke-bar {
+    
+    flex-direction: row;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  #width-input {
+    writing-mode: horizontal-tb;
+    direction: ltr;
+    margin: 0;
+  }
+
+  #color-input {
+    margin: 0;
+  }
+}

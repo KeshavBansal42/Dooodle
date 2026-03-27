@@ -116,6 +116,14 @@ for (let index = 0; index < toolButtons.length; index++) {
             const tool = toolButtons[i];
             tool.classList.remove('tool-btn-selected');
         }
+        for (let index = 0; index < elements.length; index++) {
+            const element = elements[index];
+            if(element.type==='tool-triangle-temp')
+            {
+                elements.splice(index,1);
+                index--;
+            }
+        }
         element.classList.add('tool-btn-selected');
         sessionStorage.setItem('last-tool', currentTool);
         console.log(currentTool);
