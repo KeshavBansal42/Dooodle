@@ -42,6 +42,18 @@ document.getElementById('width-input').addEventListener('input', () => {
     }
 });
 
+let degInput = '0';
+document.getElementById('deg-input').addEventListener('input', () => {
+    degInput = document.getElementById('deg-input').value;
+    if (selectedElementIndex !== null) {
+        elements[selectedElementIndex].deg = degInput;
+        if (elements[selectedElementIndex].type.substr(elements[selectedElementIndex].type.length - 7) !== 'rotated')
+            elements[selectedElementIndex].type += '-rotated';
+    }
+    drawAllElements();
+    saveDrawing();
+})
+
 let bgcolor = '#ffffff';
 // document.getElementById('bg-color-picker').value = '#ffffff';
 document.getElementById('bg-color-picker').addEventListener('input', () => {
@@ -118,9 +130,8 @@ for (let index = 0; index < toolButtons.length; index++) {
         }
         for (let index = 0; index < elements.length; index++) {
             const element = elements[index];
-            if(element.type==='tool-triangle-temp')
-            {
-                elements.splice(index,1);
+            if (element.type === 'tool-triangle-temp') {
+                elements.splice(index, 1);
                 index--;
             }
         }
@@ -136,7 +147,7 @@ for (let index = 0; index < toolButtons.length; index++) {
 function getBoundingBox(element) {
     let minX, minY, maxX, maxY;
 
-    if (element.type === 'tool-brush') {
+    if (element.type === 'tool-brush' || element.type === 'tool-brush-rotated') {
         minX = element.points[0].X; maxX = element.points[0].X;
         minY = element.points[0].Y; maxY = element.points[0].Y;
         for (let i = 1; i < element.points.length; i++) {
@@ -147,7 +158,7 @@ function getBoundingBox(element) {
             if (pt.Y > maxY) maxY = pt.Y;
         }
     }
-    else if (element.type === 'tool-circle') {
+    else if (element.type === 'tool-circle' || element.type === 'tool-circle-rotated') {
 
         let w = element.lastX - element.startX;
         let h = element.lastY - element.startY;
@@ -158,16 +169,16 @@ function getBoundingBox(element) {
         minY = cy - r; maxY = cy + r;
 
     }
-    else if (element.type === 'tool-triangle') {
+    else if (element.type === 'tool-triangle' || element.type === 'tool-triangle-rotated') {
 
         let x1 = element.p1X, y1 = element.p1Y;
         let x2 = element.p2X, y2 = element.p2Y;
         let x3 = element.p3X, y3 = element.p3Y;
         minX = Math.min(x1, x2, x3); maxX = Math.max(x1, x2, x3);
         minY = Math.min(y1, y2, y3); maxY = Math.max(y1, y2, y3);
-
+        console.log(minX, minY);
     }
-    else if (element.type === 'tool-square') {
+    else if (element.type === 'tool-square' || element.type === 'tool-square-rotated') {
 
         let w = element.lastX - element.startX;
         let h = element.lastY - element.startY;
@@ -178,7 +189,7 @@ function getBoundingBox(element) {
         minY = Math.min(element.startY, trueLastY); maxY = Math.max(element.startY, trueLastY);
 
     }
-    else if (element.type === 'tool-text') {
+    else if (element.type === 'tool-text' || element.type === 'tool-text-rotated') {
 
         ctx.font = `${element.width * 6}px sans-serif`;
         let w = ctx.measureText(element.text).width;
@@ -186,7 +197,7 @@ function getBoundingBox(element) {
         minY = element.startY; maxY = element.startY + element.width * 6;
 
     }
-    else if (element.type === 'tool-image') {
+    else if (element.type === 'tool-image' || element.type === 'tool-image-rotated') {
 
         minX = element.startX; maxX = element.lastX;
         minY = element.startY; maxY = element.lastY;
@@ -204,162 +215,236 @@ function getBoundingBox(element) {
     return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
 
+function drawRect(element) {
+    let width = element.lastX - element.startX;
+    let height = element.lastY - element.startY;
+    ctx.lineWidth = element.width;
+    ctx.strokeStyle = element.color;
+    ctx.strokeRect(element.startX, element.startY, width, height);
+}
+
+function drawCircle(element) {
+    let width = element.lastX - element.startX;
+    let height = element.lastY - element.startY;
+    let radius = Math.sqrt((width * width) + (height * height)) / 2;
+    let centerX = (element.startX + element.lastX) / 2;
+    let centerY = (element.startY + element.lastY) / 2;
+    ctx.lineWidth = element.width;
+    ctx.strokeStyle = element.color;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.stroke();
+}
+
+function drawSquare(element) {
+    let width = element.lastX - element.startX;
+    let height = element.lastY - element.startY;
+    let endCord = Math.max(Math.abs(width), Math.abs(height));
+    ctx.lineWidth = element.width;
+    ctx.strokeStyle = element.color;
+    ctx.strokeRect(element.startX, element.startY, (Math.abs(width) / width) * endCord, Math.abs(height) / height * endCord);
+}
+
+function drawTriangle(element) {
+    ctx.strokeStyle = element.color;
+    ctx.lineWidth = element.width;
+    ctx.beginPath();
+    ctx.moveTo(element.p1X, element.p1Y);
+    ctx.lineTo(element.p2X, element.p2Y);
+    ctx.lineTo(element.p3X, element.p3Y);
+    ctx.lineTo(element.p1X, element.p1Y);
+    ctx.stroke();
+}
+
+function drawTempTriangle(index, element) {
+    if (index !== elements.length - 1) {
+        elements.splice(index, 1);
+        index--;
+        // continue;
+        return;
+    }
+    ctx.strokeStyle = element.color;
+    ctx.lineWidth = element.width;
+    ctx.beginPath();
+    ctx.moveTo(element.p1X, element.p1Y);
+    if (element.p2X !== -1 && element.p2Y !== -1)
+        ctx.lineTo(element.p2X, element.p2Y);
+    if (element.p3X !== -1 && element.p3Y !== -1) {
+        ctx.lineTo(element.p3X, element.p3Y);
+    }
+    ctx.stroke();
+
+    if (element.p3X !== -1 && element.p3Y !== -1) {
+        ctx.beginPath();
+        ctx.setLineDash([5, 5]);
+        ctx.moveTo(element.p3X, element.p3Y);
+        ctx.lineTo(element.p1X, element.p1Y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+}
+
+function drawBrush(element) {
+    ctx.strokeStyle = element.color;
+    ctx.lineWidth = element.width;
+
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    if (element.points.length < 3) {
+        ctx.moveTo(element.points[0].X, element.points[0].Y);
+        for (let i = 1; i < element.points.length; i++) {
+            ctx.lineTo(element.points[i].X, element.points[i].Y);
+        }
+    }
+    else {
+        ctx.moveTo(element.points[0].X, element.points[0].Y);
+        let i;
+        for (i = 1; i < element.points.length - 1; i++) {
+            let midX = (element.points[i].X + element.points[i + 1].X) / 2;
+            let midY = (element.points[i].Y + element.points[i + 1].Y) / 2;
+            ctx.quadraticCurveTo(element.points[i].X, element.points[i].Y, midX, midY);
+        }
+        ctx.lineTo(element.points[i].X, element.points[i].Y);
+    }
+    ctx.stroke();
+
+    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'miter';
+}
+
+function drawText(element) {
+    ctx.font = `${element.width * 6}px sans-serif`;
+    ctx.fillStyle = element.color;
+    ctx.textBaseline = 'top';
+    ctx.fillText(element.text, element.startX, element.startY);
+}
+
+function drawImage(element) {
+    const renderImg = new Image();
+    renderImg.crossOrigin = 'anonymous';
+    renderImg.src = element.url;
+    if (renderImg.complete) {
+        let width = element.lastX - element.startX;
+        let height = element.lastY - element.startY;
+        ctx.drawImage(renderImg, element.startX, element.startY, width, height);
+    }
+    else {
+        renderImg.onload = () => {
+            let width = element.lastX - element.startX;
+            let height = element.lastY - element.startY;
+            ctx.drawImage(renderImg, element.startX, element.startY, width, height);
+            // ctx.drawImage(renderImg, element.startX, element.startY, 200, 200);
+        }
+    }
+}
+
+function drawTempImage(element) {
+    let width = element.lastX - element.startX;
+    let height = element.lastY - element.startY;
+    ctx.setLineDash([5, 5]);
+    ctx.strokeRect(element.startX, element.startY, width, height);
+    ctx.setLineDash([]);
+}
+
+function drawBoundingBox() {
+    const selectedEl = elements[selectedElementIndex];
+    const box = getBoundingBox(selectedEl);
+
+    // let centerX = box.x + box.w / 2;
+    // let centerY = box.y + box.h / 2;
+
+    let currentStroke = ctx.strokeStyle;
+    let currentFill = ctx.fillStyle;
+
+    ctx.strokeStyle = 'black';
+
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    // if (selectedEl.type.substr(selectedEl.type.length - 7) === 'rotated') {
+
+    //     ctx.save();
+
+    //     ctx.translate(centerX, centerY);
+    //     ctx.rotate((Math.PI / 180) * element.deg);
+    //     ctx.translate(-1 * centerX, -1 * centerY)
+    // }
+
+    ctx.strokeRect(box.x - 10, box.y - 10, box.w + 20, box.h + 20);
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = 'white';
+
+    let handleX = box.x + box.w + 10;
+    let handleY = box.y + box.h + 10;
+
+    ctx.fillRect(handleX - 5, handleY - 5, 10, 10);
+    ctx.strokeRect(handleX - 5, handleY - 5, 10, 10);
+
+    // if (selectedEl.type.substr(selectedEl.type.length - 7) === 'rotated') {
+    //     ctx.restore();
+    // }
+
+    ctx.fillStyle = currentFill;
+    ctx.strokeStyle = currentStroke;
+}
+
 function drawAllElements() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = bgcolor;
     ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
     for (let index = 0; index < elements.length; index++) {
         const element = elements[index];
-        if (element.type === 'tool-rect') {
-            let width = element.lastX - element.startX;
-            let height = element.lastY - element.startY;
-            ctx.lineWidth = element.width;
-            ctx.strokeStyle = element.color;
-            ctx.strokeRect(element.startX, element.startY, width, height);
+        const box = getBoundingBox(element);
+        console.log(box);
+
+        let centerX = box.x + box.w / 2;
+        let centerY = box.y + box.h / 2;
+
+        console.log(centerX, centerY);
+        if (element.type.substr(element.type.length - 7) === 'rotated') {
+
+            ctx.save();
+
+            ctx.translate(centerX, centerY);
+            ctx.rotate((Math.PI / 180) * element.deg);
+            ctx.translate(-1 * centerX, -1 * centerY);
         }
-        else if (element.type === 'tool-circle') {
-            let width = element.lastX - element.startX;
-            let height = element.lastY - element.startY;
-            let radius = Math.sqrt((width * width) + (height * height)) / 2;
-            let centerX = (element.startX + element.lastX) / 2;
-            let centerY = (element.startY + element.lastY) / 2;
-            ctx.lineWidth = element.width;
-            ctx.strokeStyle = element.color;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-            ctx.stroke();
+        if (element.type === 'tool-rect' || element.type === 'tool-rect-rotated') {
+            drawRect(element);
         }
-        else if (element.type === 'tool-square') {
-            let width = element.lastX - element.startX;
-            let height = element.lastY - element.startY;
-            let endCord = Math.max(Math.abs(width), Math.abs(height));
-            ctx.lineWidth = element.width;
-            ctx.strokeStyle = element.color;
-            ctx.strokeRect(element.startX, element.startY, (Math.abs(width) / width) * endCord, Math.abs(height) / height * endCord);
+        else if (element.type === 'tool-circle' || element.type === 'tool-circle-rotated') {
+            drawCircle(element);
         }
-        else if (element.type === 'tool-triangle') {
-            ctx.strokeStyle = element.color;
-            ctx.lineWidth = element.width;
-            ctx.beginPath();
-            ctx.moveTo(element.p1X, element.p1Y);
-            ctx.lineTo(element.p2X, element.p2Y);
-            ctx.lineTo(element.p3X, element.p3Y);
-            ctx.lineTo(element.p1X, element.p1Y);
-            ctx.stroke();
+        else if (element.type === 'tool-square' || element.type === 'tool-square-rotated') {
+            drawSquare(element);
+        }
+        else if (element.type === 'tool-triangle' || element.type === 'tool-triangle-rotated') {
+            drawTriangle(element);
         }
         else if (element.type === 'tool-triangle-temp') {
-            if (index !== elements.length - 1) {
-                elements.splice(index, 1);
-                index--;
-                continue;
-            }
-            ctx.strokeStyle = element.color;
-            ctx.lineWidth = element.width;
-            ctx.beginPath();
-            ctx.moveTo(element.p1X, element.p1Y);
-            if (element.p2X !== -1 && element.p2Y !== -1)
-                ctx.lineTo(element.p2X, element.p2Y);
-            if (element.p3X !== -1 && element.p3Y !== -1) {
-                ctx.lineTo(element.p3X, element.p3Y);
-            }
-            ctx.stroke();
-
-            if (element.p3X !== -1 && element.p3Y !== -1) {
-                ctx.beginPath();
-                ctx.setLineDash([5, 5]);
-                ctx.moveTo(element.p3X, element.p3Y);
-                ctx.lineTo(element.p1X, element.p1Y);
-                ctx.stroke();
-                ctx.setLineDash([]);
-            }
+            drawTempTriangle(index, element);
         }
-        else if (element.type === 'tool-brush') {
-            ctx.strokeStyle = element.color;
-            ctx.lineWidth = element.width;
-
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-
-            ctx.beginPath();
-            if (element.points.length < 3) {
-                ctx.moveTo(element.points[0].X, element.points[0].Y);
-                for (let i = 1; i < element.points.length; i++) {
-                    ctx.lineTo(element.points[i].X, element.points[i].Y);
-                }
-            }
-            else {
-                ctx.moveTo(element.points[0].X, element.points[0].Y);
-                let i;
-                for (i = 1; i < element.points.length - 1; i++) {
-                    let midX = (element.points[i].X + element.points[i + 1].X) / 2;
-                    let midY = (element.points[i].Y + element.points[i + 1].Y) / 2;
-                    ctx.quadraticCurveTo(element.points[i].X, element.points[i].Y, midX, midY);
-                }
-                ctx.lineTo(element.points[i].X, element.points[i].Y);
-            }
-            ctx.stroke();
-
-            ctx.lineCap = 'butt';
-            ctx.lineJoin = 'miter';
+        else if (element.type === 'tool-brush' || element.type === 'tool-brush-rotated') {
+            drawBrush(element);
         }
-        else if (element.type === 'tool-text') {
-            ctx.font = `${element.width * 6}px sans-serif`;
-            ctx.fillStyle = element.color;
-            ctx.textBaseline = 'top';
-            ctx.fillText(element.text, element.startX, element.startY);
+        else if (element.type === 'tool-text' || element.type === 'tool-text-rotated') {
+            drawText(element);
         }
-        else if (element.type === 'tool-image') {
-            const renderImg = new Image();
-            renderImg.crossOrigin = 'anonymous';
-            renderImg.src = element.url;
-            if (renderImg.complete) {
-                let width = element.lastX - element.startX;
-                let height = element.lastY - element.startY;
-                ctx.drawImage(renderImg, element.startX, element.startY, width, height);
-            }
-            else {
-                renderImg.onload = () => {
-                    let width = element.lastX - element.startX;
-                    let height = element.lastY - element.startY;
-                    ctx.drawImage(renderImg, element.startX, element.startY, width, height);
-                    // ctx.drawImage(renderImg, element.startX, element.startY, 200, 200);
-                }
-            }
+        else if (element.type === 'tool-image' || element.type === 'tool-image-rotated') {
+            drawImage(element);
         }
         else if (element.type === 'tool-image-temp') {
-            let width = element.lastX - element.startX;
-            let height = element.lastY - element.startY;
-            ctx.setLineDash([5, 5]);
-            ctx.strokeRect(element.startX, element.startY, width, height);
-            ctx.setLineDash([]);
+            drawTempImage(element);
         }
-        console.log(elements);
-    }
-    if (selectedElementIndex !== null) {
-        const selectedEl = elements[selectedElementIndex];
-        const box = getBoundingBox(selectedEl);
-
-        let currentStroke = ctx.strokeStyle;
-        let currentFill = ctx.fillStyle;
-
-        ctx.strokeStyle = 'black';
-
-        ctx.lineWidth = 1;
-        ctx.setLineDash([5, 5]);
-
-        ctx.strokeRect(box.x - 10, box.y - 10, box.w + 20, box.h + 20);
-        ctx.setLineDash([]);
-
-        ctx.fillStyle = 'white';
-
-        let handleX = box.x + box.w + 10;
-        let handleY = box.y + box.h + 10;
-
-        ctx.fillRect(handleX - 5, handleY - 5, 10, 10);
-        ctx.strokeRect(handleX - 5, handleY - 5, 10, 10);
-
-        ctx.fillStyle = currentFill;
-        ctx.strokeStyle = currentStroke;
+        if (selectedElementIndex !== null) {
+            drawBoundingBox();
+        }
+        if (element.type.substr(element.type.length - 7) === 'rotated') {
+            ctx.restore();
+        }
+        // console.log(elements);
     }
 }
 
@@ -373,7 +458,7 @@ function isPointInTriangle(px, py, x1, y1, x2, y2, x3, y3) {
 }
 
 function isHit(x, y, element) {
-    if (element.type === 'tool-rect') {
+    if (element.type === 'tool-rect' || element.type === 'tool-rect-rotated') {
         const minX = Math.min(element.startX, element.lastX);
         const maxX = Math.max(element.startX, element.lastX);
         const minY = Math.min(element.startY, element.lastY);
@@ -383,7 +468,7 @@ function isHit(x, y, element) {
             return true;
         }
     }
-    else if (element.type === 'tool-circle') {
+    else if (element.type === 'tool-circle' || element.type === 'tool-circle-rotated') {
         let w = element.lastX - element.startX;
         let h = element.lastY - element.startY;
         let radius = Math.sqrt((w * w) + (h * h)) / 2;
@@ -396,12 +481,12 @@ function isHit(x, y, element) {
             return true;
         }
     }
-    else if (element.type === 'tool-image') {
+    else if (element.type === 'tool-image' || element.type === 'tool-image-rotated') {
         if (x >= element.startX && x <= element.lastX && y >= element.startY && y <= element.lastY) {
             return true;
         }
     }
-    else if (element.type === 'tool-square') {
+    else if (element.type === 'tool-square' || element.type === 'tool-square-rotated') {
         let w = element.lastX - element.startX;
         let h = element.lastY - element.startY;
         let endCord = Math.max(Math.abs(w), Math.abs(h));
@@ -418,7 +503,7 @@ function isHit(x, y, element) {
             return true;
         }
     }
-    else if (element.type === 'tool-triangle') {
+    else if (element.type === 'tool-triangle' || element.type === 'tool-triangle-rotated') {
         let x1 = element.p1X, y1 = element.p1Y;
         let x2 = element.p2X, y2 = element.p2Y;
         let x3 = element.p3X, y3 = element.p3Y;
@@ -427,7 +512,7 @@ function isHit(x, y, element) {
             return true;
         }
     }
-    else if (element.type === 'tool-brush') {
+    else if (element.type === 'tool-brush' || element.type === 'tool-brush-rotated') {
         for (let j = 0; j < element.points.length; j++) {
             let pt = element.points[j];
 
@@ -438,7 +523,7 @@ function isHit(x, y, element) {
             }
         }
     }
-    else if (element.type === 'tool-text') {
+    else if (element.type === 'tool-text' || element.type === 'tool-text-rotated') {
         let width = ctx.measureText(element.text).width;
         if (x >= element.startX && x <= element.startX + width && y >= element.startY && y <= element.startY + element.width * 6) {
             return true;
@@ -464,7 +549,8 @@ function onMouseDown(e) {
             startX: X,
             startY: Y,
             lastX: X,
-            lastY: Y
+            lastY: Y,
+            deg: 0
         });
     }
     else if (currentTool === 'tool-triangle') {
@@ -484,7 +570,8 @@ function onMouseDown(e) {
                 p3X: -1,
                 p3Y: -1,
                 color: inputColor,
-                width: inputWidth
+                width: inputWidth,
+                deg: 0
             });
         }
     }
@@ -525,7 +612,8 @@ function onMouseDown(e) {
                     startX: X,
                     startY: Y,
                     color: inputColor,
-                    width: inputWidth
+                    width: inputWidth,
+                    deg: 0
                 });
                 drawAllElements();
                 saveDrawing();
@@ -539,7 +627,9 @@ function onMouseDown(e) {
         let x = e.clientX - rect.left;
         let y = e.clientY - rect.top;
 
+
         if (selectedElementIndex !== null) {
+            document.getElementById('deg-input').value = elements[selectedElementIndex].deg;
             let box = getBoundingBox(elements[selectedElementIndex]);
             let handleX = box.x + box.w;
             let handleY = box.y + box.h;
@@ -557,6 +647,22 @@ function onMouseDown(e) {
         for (let index = elements.length - 1; index >= 0; index--) {
             const element = elements[index];
 
+            const box = getBoundingBox(element);
+            console.log(box);
+
+            let centerX = box.x + box.w / 2;
+            let centerY = box.y + box.h / 2;
+
+            console.log(centerX, centerY);
+            if (element.type.substr(element.type.length - 7) === 'rotated') {
+
+                ctx.save();
+
+                ctx.translate(centerX, centerY);
+                ctx.rotate(-1 * (Math.PI / 180) * element.deg);
+                ctx.translate(-1 * centerX, -1 * centerY);
+            }
+
             if (isHit(x, y, element)) {
                 selectedElementIndex = index;
                 isDrawing = true;
@@ -564,6 +670,8 @@ function onMouseDown(e) {
                 dragStartY = y;
 
                 let selectedEl = elements[selectedElementIndex];
+
+                document.getElementById('deg-input').value = selectedEl.deg;
 
                 if (selectedEl.color) {
                     inputColor = selectedEl.color;
@@ -576,7 +684,15 @@ function onMouseDown(e) {
                     sliderTextVal.innerHTML = inputWidth;
                 }
 
+                if (element.type.substr(element.type.length - 7) === 'rotated') {
+                    ctx.restore();
+                }
+
                 break;
+            }
+
+            if (element.type.substr(element.type.length - 7) === 'rotated') {
+                ctx.restore();
             }
         }
         drawAllElements();
@@ -592,7 +708,8 @@ function onMouseDown(e) {
                 type: currentTool,
                 points: [{ X: startX, Y: startY }],
                 color: inputColor,
-                width: inputWidth
+                width: inputWidth,
+                deg: 0
             });
         }
         else {
@@ -603,7 +720,8 @@ function onMouseDown(e) {
                 lastX: startX,
                 lastY: startY,
                 color: inputColor,
-                width: inputWidth
+                width: inputWidth,
+                deg: 0
             });
         }
     }
@@ -761,6 +879,7 @@ canvas.addEventListener('pointermove', (e) => {
 
 function onMouseUp(e) {
     const rect = canvas.getBoundingClientRect();
+    document.getElementById('deg-input').value = 0;
 
     let currX = e.clientX - rect.left;
     let currY = e.clientY - rect.top;
@@ -929,7 +1048,7 @@ redoBtn.addEventListener('click', redo)
 
 window.addEventListener('keydown', (e) => {
     // e.preventDefault();
-    if (currentTool!=='tool-text') {
+    if (currentTool !== 'tool-text') {
         e.preventDefault();
         if (e.ctrlKey || e.metaKey) {
             if (e.key === 'z')
