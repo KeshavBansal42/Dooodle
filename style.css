@@ -226,7 +226,6 @@ svg {
   }
 
   #stroke-bar {
-    
     flex-direction: row;
     top: 1rem;
     left: 50%;
@@ -236,10 +235,14 @@ svg {
   #width-input {
     writing-mode: horizontal-tb;
     direction: ltr;
-    margin: 0;
+    margin: 0 1rem 0 1rem;
   }
 
   #color-input {
-    margin: 0;
+    margin: 0 0 0 0.5rem;
+  }
+
+  #slider-value {
+    margin: 0.2rem 0.5rem 0.2rem 0;
   }
 }
