@@ -257,12 +257,12 @@ function drawTriangle(element) {
 }
 
 function drawTempTriangle(index, element) {
-    if (index !== elements.length - 1) {
-        elements.splice(index, 1);
-        index--;
-        // continue;
-        return;
-    }
+    // if (index !== elements.length - 1) {
+    //     elements.splice(index, 1);
+    //     index--;
+    //     // continue;
+    //     return;
+    // }
     ctx.strokeStyle = element.color;
     ctx.lineWidth = element.width;
     ctx.beginPath();
@@ -352,8 +352,8 @@ function drawBoundingBox() {
     const selectedEl = elements[selectedElementIndex];
     const box = getBoundingBox(selectedEl);
 
-    // let centerX = box.x + box.w / 2;
-    // let centerY = box.y + box.h / 2;
+    let centerX = box.x + box.w / 2;
+    let centerY = box.y + box.h / 2;
 
     let currentStroke = ctx.strokeStyle;
     let currentFill = ctx.fillStyle;
@@ -362,14 +362,14 @@ function drawBoundingBox() {
 
     ctx.lineWidth = 1;
     ctx.setLineDash([5, 5]);
-    // if (selectedEl.type.substr(selectedEl.type.length - 7) === 'rotated') {
+    if (selectedEl.type.substr(selectedEl.type.length - 7) === 'rotated') {
 
-    //     ctx.save();
+        ctx.save();
 
-    //     ctx.translate(centerX, centerY);
-    //     ctx.rotate((Math.PI / 180) * element.deg);
-    //     ctx.translate(-1 * centerX, -1 * centerY)
-    // }
+        ctx.translate(centerX, centerY);
+        ctx.rotate((Math.PI / 180) * selectedEl.deg);
+        ctx.translate(-1 * centerX, -1 * centerY)
+    }
 
     ctx.strokeRect(box.x - 10, box.y - 10, box.w + 20, box.h + 20);
     ctx.setLineDash([]);
@@ -382,9 +382,10 @@ function drawBoundingBox() {
     ctx.fillRect(handleX - 5, handleY - 5, 10, 10);
     ctx.strokeRect(handleX - 5, handleY - 5, 10, 10);
 
-    // if (selectedEl.type.substr(selectedEl.type.length - 7) === 'rotated') {
-    //     ctx.restore();
-    // }
+    if (selectedEl.type.substr(selectedEl.type.length - 7) === 'rotated') {
+        ctx.restore();
+        ctx.setLineDash([]);
+    }
 
     ctx.fillStyle = currentFill;
     ctx.strokeStyle = currentStroke;
@@ -438,13 +439,13 @@ function drawAllElements() {
         else if (element.type === 'tool-image-temp') {
             drawTempImage(element);
         }
-        if (selectedElementIndex !== null) {
-            drawBoundingBox();
-        }
         if (element.type.substr(element.type.length - 7) === 'rotated') {
             ctx.restore();
         }
         // console.log(elements);
+    }
+    if (selectedElementIndex !== null) {
+        drawBoundingBox();
     }
 }
 
@@ -455,6 +456,20 @@ function isPointInTriangle(px, py, x1, y1, x2, y2, x3, y3) {
     const area3 = Math.abs((x3 - px) * (y1 - py) - (x1 - px) * (y3 - py));
 
     return Math.abs(area1 + area2 + area3 - areaOrig) < 1;
+}
+
+function inverseRotatePoint(mouseX, mouseY, centerX, centerY, angleDeg) {
+    let rad = (Math.PI / 180) * -angleDeg;
+    let cos = Math.cos(rad);
+    let sin = Math.sin(rad);
+
+    let diffX = mouseX - centerX;
+    let diffY = mouseY - centerY;
+
+    return {
+        x: (cos * diffX) - (sin * diffY) + centerX,
+        y: (sin * diffX) + (cos * diffY) + centerY
+    };
 }
 
 function isHit(x, y, element) {
@@ -629,12 +644,24 @@ function onMouseDown(e) {
 
 
         if (selectedElementIndex !== null) {
-            document.getElementById('deg-input').value = elements[selectedElementIndex].deg;
+            let selectedEl = elements[selectedElementIndex];
+            document.getElementById('deg-input').value = elements[selectedElementIndex].deg || 0;
             let box = getBoundingBox(elements[selectedElementIndex]);
             let handleX = box.x + box.w;
             let handleY = box.y + box.h;
 
-            if (Math.abs(x - handleX) <= 10 && Math.abs(y - handleY) <= 10) {
+            let rotatedX = x;
+            let rotatedY = y;
+
+            if (selectedEl.type.substr(selectedEl.type.length - 7) === 'rotated') {
+                let centerX = box.x + box.w / 2;
+                let centerY = box.y + box.h / 2;
+                let inverted = inverseRotatePoint(x, y, centerX, centerY, selectedEl.deg);
+                rotatedX = inverted.x;
+                rotatedY = inverted.y;
+            }
+
+            if (Math.abs(rotatedX - handleX) <= 10 && Math.abs(rotatedY - handleY) <= 10) {
                 isResizing = true;
                 dragStartX = x;
                 dragStartY = y;
@@ -647,23 +674,19 @@ function onMouseDown(e) {
         for (let index = elements.length - 1; index >= 0; index--) {
             const element = elements[index];
 
-            const box = getBoundingBox(element);
-            console.log(box);
+            let rotatedX = x;
+            let rotatedY = y;
 
-            let centerX = box.x + box.w / 2;
-            let centerY = box.y + box.h / 2;
-
-            console.log(centerX, centerY);
             if (element.type.substr(element.type.length - 7) === 'rotated') {
-
-                ctx.save();
-
-                ctx.translate(centerX, centerY);
-                ctx.rotate(-1 * (Math.PI / 180) * element.deg);
-                ctx.translate(-1 * centerX, -1 * centerY);
+                const box = getBoundingBox(element);
+                let centerX = box.x + box.w / 2;
+                let centerY = box.y + box.h / 2;
+                let inverted = inverseRotatePoint(x, y, centerX, centerY, element.deg);
+                rotatedX = inverted.x;
+                rotatedY = inverted.y;
             }
 
-            if (isHit(x, y, element)) {
+            if (isHit(rotatedX, rotatedY, element)) {
                 selectedElementIndex = index;
                 isDrawing = true;
                 dragStartX = x;
@@ -684,15 +707,7 @@ function onMouseDown(e) {
                     sliderTextVal.innerHTML = inputWidth;
                 }
 
-                if (element.type.substr(element.type.length - 7) === 'rotated') {
-                    ctx.restore();
-                }
-
                 break;
-            }
-
-            if (element.type.substr(element.type.length - 7) === 'rotated') {
-                ctx.restore();
             }
         }
         drawAllElements();
@@ -758,7 +773,7 @@ function onMouseMove(e) {
         let diffY = currY - dragStartY;
         let selectedEl = elements[selectedElementIndex];
 
-        if (selectedEl.type !== 'tool-brush' && selectedEl.type !== 'tool-text' && selectedEl.type !== 'tool-triangle') {
+        if (selectedEl.type !== 'tool-brush' && selectedEl.type !== 'tool-text' && selectedEl.type !== 'tool-triangle' && selectedEl.type !== 'tool-brush-rotated' && selectedEl.type !== 'tool-text-rotated' && selectedEl.type !== 'tool-triangle-rotated') {
             selectedEl.lastX += diffX;
             selectedEl.lastY += diffY;
 
@@ -770,7 +785,7 @@ function onMouseMove(e) {
             return;
         }
 
-        else if (selectedEl.type === 'tool-triangle') {
+        else if (selectedEl.type === 'tool-triangle' || selectedEl.type === 'tool-triangle-rotated') {
             let box = getBoundingBox(selectedEl);
             let startX = box.x;
             let startY = box.y;
@@ -791,7 +806,7 @@ function onMouseMove(e) {
             return;
         }
 
-        else if (selectedEl.type === 'tool-brush') {
+        else if (selectedEl.type === 'tool-brush' || selectedEl.type === 'tool-brush-rotated') {
             let box = getBoundingBox(selectedEl);
             let startX = box.x;
             let startY = box.y;
@@ -815,17 +830,17 @@ function onMouseMove(e) {
         let diffX = currX - dragStartX;
         let diffY = currY - dragStartY;
 
-        if (selectedElement.type === 'tool-brush') {
+        if (selectedElement.type === 'tool-brush' || selectedElement.type === 'tool-brush-rotated') {
             for (let i = 0; i < selectedElement.points.length; i++) {
                 selectedElement.points[i].X += diffX;
                 selectedElement.points[i].Y += diffY;
             }
         }
-        else if (selectedElement.type === 'tool-text') {
+        else if (selectedElement.type === 'tool-text' || selectedElement.type === 'tool-text-rotated') {
             selectedElement.startX += diffX;
             selectedElement.startY += diffY;
         }
-        else if (selectedElement.type === 'tool-triangle') {
+        else if (selectedElement.type === 'tool-triangle' || selectedElement.type === 'tool-triangle-rotated') {
             selectedElement.p1X += diffX;
             selectedElement.p2X += diffX;
             selectedElement.p3X += diffX;
@@ -879,7 +894,7 @@ canvas.addEventListener('pointermove', (e) => {
 
 function onMouseUp(e) {
     const rect = canvas.getBoundingClientRect();
-    document.getElementById('deg-input').value = 0;
+    // document.getElementById('deg-input').value = 0;
 
     let currX = e.clientX - rect.left;
     let currY = e.clientY - rect.top;
@@ -935,7 +950,7 @@ canvas.addEventListener('dblclick', (e) => {
     if (currentTool !== 'tool-select') return;
     for (let i = 0; i < elements.length; i++) {
         const element = elements[i];
-        if (element.type === 'tool-text') {
+        if (element.type === 'tool-text'||element.type==='tool-text-rotated') {
             let width = ctx.measureText(element.text).width;
             if ((e.offsetX >= element.startX && e.offsetX <= element.startX + width) && (e.offsetY >= element.startY && e.offsetY <= element.startY + 24)) {
                 const textarea = document.createElement('textarea');
