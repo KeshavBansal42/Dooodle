@@ -42,20 +42,7 @@ document.getElementById('width-input').addEventListener('input', () => {
     }
 });
 
-let degInput = '0';
-document.getElementById('deg-input').addEventListener('input', () => {
-    degInput = document.getElementById('deg-input').value;
-    if (selectedElementIndex !== null) {
-        elements[selectedElementIndex].deg = degInput;
-        if (elements[selectedElementIndex].type.substr(elements[selectedElementIndex].type.length - 7) !== 'rotated')
-            elements[selectedElementIndex].type += '-rotated';
-    }
-    drawAllElements();
-    saveDrawing();
-})
-
 let bgcolor = '#ffffff';
-// document.getElementById('bg-color-picker').value = '#ffffff';
 document.getElementById('bg-color-picker').addEventListener('input', () => {
     bgcolor = document.getElementById('bg-color-picker').value;
     sessionStorage.setItem('bgcolor', bgcolor);
@@ -257,12 +244,6 @@ function drawTriangle(element) {
 }
 
 function drawTempTriangle(index, element) {
-    // if (index !== elements.length - 1) {
-    //     elements.splice(index, 1);
-    //     index--;
-    //     // continue;
-    //     return;
-    // }
     ctx.strokeStyle = element.color;
     ctx.lineWidth = element.width;
     ctx.beginPath();
@@ -335,7 +316,6 @@ function drawImage(element) {
             let width = element.lastX - element.startX;
             let height = element.lastY - element.startY;
             ctx.drawImage(renderImg, element.startX, element.startY, width, height);
-            // ctx.drawImage(renderImg, element.startX, element.startY, 200, 200);
         }
     }
 }
@@ -398,12 +378,10 @@ function drawAllElements() {
     for (let index = 0; index < elements.length; index++) {
         const element = elements[index];
         const box = getBoundingBox(element);
-        console.log(box);
 
         let centerX = box.x + box.w / 2;
         let centerY = box.y + box.h / 2;
 
-        console.log(centerX, centerY);
         if (element.type.substr(element.type.length - 7) === 'rotated') {
 
             ctx.save();
@@ -442,7 +420,6 @@ function drawAllElements() {
         if (element.type.substr(element.type.length - 7) === 'rotated') {
             ctx.restore();
         }
-        // console.log(elements);
     }
     if (selectedElementIndex !== null) {
         drawBoundingBox();
@@ -645,7 +622,6 @@ function onMouseDown(e) {
 
         if (selectedElementIndex !== null) {
             let selectedEl = elements[selectedElementIndex];
-            document.getElementById('deg-input').value = elements[selectedElementIndex].deg || 0;
             let box = getBoundingBox(elements[selectedElementIndex]);
             let handleX = box.x + box.w;
             let handleY = box.y + box.h;
@@ -694,8 +670,6 @@ function onMouseDown(e) {
 
                 let selectedEl = elements[selectedElementIndex];
 
-                document.getElementById('deg-input').value = selectedEl.deg;
-
                 if (selectedEl.color) {
                     inputColor = selectedEl.color;
                     document.getElementById('color-input').value = inputColor;
@@ -742,9 +716,6 @@ function onMouseDown(e) {
     }
 }
 
-// canvas.addEventListener('mousedown', (e) => {
-//     onMouseDown(e);
-// });
 canvas.addEventListener('pointerdown', (e) => {
     onMouseDown(e);
 });
@@ -885,9 +856,6 @@ function onMouseMove(e) {
     drawAllElements();
 }
 
-// canvas.addEventListener('mousemove', (e) => {
-//     onMouseMove(e);
-// });
 canvas.addEventListener('pointermove', (e) => {
     onMouseMove(e);
 });
@@ -939,9 +907,6 @@ function onMouseUp(e) {
     saveDrawing();
 }
 
-// canvas.addEventListener('mouseup', () => {
-//     onMouseUp();
-// });
 canvas.addEventListener('pointerup', (e) => {
     onMouseUp(e);
 });
@@ -950,7 +915,7 @@ canvas.addEventListener('dblclick', (e) => {
     if (currentTool !== 'tool-select') return;
     for (let i = 0; i < elements.length; i++) {
         const element = elements[i];
-        if (element.type === 'tool-text'||element.type==='tool-text-rotated') {
+        if (element.type === 'tool-text' || element.type === 'tool-text-rotated') {
             let width = ctx.measureText(element.text).width;
             if ((e.offsetX >= element.startX && e.offsetX <= element.startX + width) && (e.offsetY >= element.startY && e.offsetY <= element.startY + 24)) {
                 const textarea = document.createElement('textarea');
@@ -1000,7 +965,6 @@ clear.addEventListener('click', () => {
     clearedCanvas.push(elements);
     elements = [];
     elements.push({ type: 'clear' });
-    // undoneElements = [];
     drawAllElements();
     saveDrawing();
 })
@@ -1065,6 +1029,25 @@ window.addEventListener('keydown', (e) => {
     // e.preventDefault();
     if (currentTool !== 'tool-text') {
         e.preventDefault();
+        if (selectedElementIndex !== null) {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                let selectedEl = elements[selectedElementIndex];
+
+                if (e.key === 'ArrowRight') {
+                    selectedEl.deg = (Number(selectedEl.deg) + 5) % 360;
+                } else if (e.key === 'ArrowLeft') {
+                    selectedEl.deg = (Number(selectedEl.deg) - 5) % 360;
+                }
+
+                if (!selectedEl.type.includes('-rotated')) {
+                    selectedEl.type += '-rotated';
+                }
+
+                drawAllElements();
+                saveDrawing();
+                return;
+            }
+        }
         if (e.ctrlKey || e.metaKey) {
             if (e.key === 'z')
                 undo();
