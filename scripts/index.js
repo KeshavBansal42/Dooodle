@@ -175,56 +175,54 @@ window.addEventListener('keydown', (e) => {
             return;
         }
     }
-    if (variables.currentTool !== 'tool-text') {
-        e.preventDefault();
-        if (variables.selectedElementIndex !== null) {
-            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-                let selectedEl = variables.elements[variables.selectedElementIndex];
+    e.preventDefault();
+    if (variables.selectedElementIndex !== null) {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+            let selectedEl = variables.elements[variables.selectedElementIndex];
 
-                if (e.key === 'ArrowRight') {
-                    selectedEl.deg = (Number(selectedEl.deg) + 5) % 360;
-                } else if (e.key === 'ArrowLeft') {
-                    selectedEl.deg = (Number(selectedEl.deg) - 5) % 360;
-                }
-
-                if (!selectedEl.type.includes('-rotated')) {
-                    selectedEl.type += '-rotated';
-                }
-
-                draw.drawAllElements();
-                util.saveDrawing();
-                return;
+            if (e.key === 'ArrowRight') {
+                selectedEl.deg = (Number(selectedEl.deg) + 5) % 360;
+            } else if (e.key === 'ArrowLeft') {
+                selectedEl.deg = (Number(selectedEl.deg) - 5) % 360;
             }
+
+            if (!selectedEl.type.includes('-rotated')) {
+                selectedEl.type += '-rotated';
+            }
+
+            draw.drawAllElements();
+            util.saveDrawing();
+            return;
         }
-        if (e.ctrlKey || e.metaKey) {
-            if (e.key === 'z')
-                util.undo();
-            else if (e.key === 'y')
-                util.redo();
-            else if (e.key === 'd')
-                clear.click();
-            else if (e.key === 'p')
-                document.getElementById('action-download').click();
-            else if (e.key === '1')
-                document.getElementById('tool-select').click();
-            else if (e.key === '2')
-                document.getElementById('tool-rect').click();
-            else if (e.key === '3')
-                document.getElementById('tool-circle').click();
-            else if (e.key === '4')
-                document.getElementById('tool-square').click();
-            else if (e.key === '5')
-                document.getElementById('tool-triangle').click();
-            else if (e.key === '6')
-                document.getElementById('tool-brush').click();
-            else if (e.key === '7')
-                document.getElementById('tool-text').click();
-            else if (e.key === '8')
-                document.getElementById('tool-eraser').click();
-            else if (e.key === '9')
-                document.getElementById('tool-image').click();
-            else if (e.key === 'm')
-                document.getElementById('theme-toggle').click();
-        }
+    }
+    if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'z')
+            util.undo();
+        else if (e.key === 'y')
+            util.redo();
+        else if (e.key === 'd')
+            clear.click();
+        else if (e.key === 'p')
+            document.getElementById('action-download').click();
+        else if (e.key === '1')
+            document.getElementById('tool-select').click();
+        else if (e.key === '2')
+            document.getElementById('tool-rect').click();
+        else if (e.key === '3')
+            document.getElementById('tool-circle').click();
+        else if (e.key === '4')
+            document.getElementById('tool-square').click();
+        else if (e.key === '5')
+            document.getElementById('tool-triangle').click();
+        else if (e.key === '6')
+            document.getElementById('tool-brush').click();
+        else if (e.key === '7')
+            document.getElementById('tool-text').click();
+        else if (e.key === '8')
+            document.getElementById('tool-eraser').click();
+        else if (e.key === '9')
+            document.getElementById('tool-image').click();
+        else if (e.key === 'm')
+            document.getElementById('theme-toggle').click();
     }
 });
