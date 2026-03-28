@@ -206,6 +206,17 @@ svg {
 
 /* end of the styles for the sidebar */
 
+.text-tool-input {
+  position: fixed;
+  background: transparent;
+  border: 1px dashed;
+  outline: none;
+  line-height: 1;
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
 @media (max-width: 800px) {
   #top-ui-container {
     position: absolute;

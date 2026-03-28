@@ -23,7 +23,6 @@ document.getElementById('color-input').addEventListener('input', () => {
         drawAllElements();
         saveDrawing();
     }
-    console.log(inputColor);
 })
 
 //input stroke width
@@ -50,7 +49,6 @@ document.getElementById('bg-color-picker').addEventListener('input', () => {
 })
 
 window.addEventListener('load', () => {
-    console.log(sessionStorage);
     if (sessionStorage.getItem('last-tool')) {
         currentTool = sessionStorage.getItem('last-tool');
         document.getElementById(currentTool).click();
@@ -58,7 +56,6 @@ window.addEventListener('load', () => {
     if (sessionStorage.getItem('myDooodle')) {
         elements = JSON.parse(sessionStorage.getItem('myDooodle'));
         if (sessionStorage.getItem('theme')) {
-            console.log(sessionStorage.getItem('theme'))
             if (sessionStorage.getItem('theme') === 'dark') {
                 document.body.classList.toggle('dark-mode')
             }
@@ -101,7 +98,6 @@ darkModeToggle.addEventListener('click', () => {
     }
     else
         sessionStorage.setItem('theme', 'dark');
-    console.log(sessionStorage);
     drawAllElements();
 })
 
@@ -124,7 +120,6 @@ for (let index = 0; index < toolButtons.length; index++) {
         }
         element.classList.add('tool-btn-selected');
         sessionStorage.setItem('last-tool', currentTool);
-        console.log(currentTool);
 
         selectedElementIndex = null;
         drawAllElements();
@@ -163,7 +158,6 @@ function getBoundingBox(element) {
         let x3 = element.p3X, y3 = element.p3Y;
         minX = Math.min(x1, x2, x3); maxX = Math.max(x1, x2, x3);
         minY = Math.min(y1, y2, y3); maxY = Math.max(y1, y2, y3);
-        console.log(minX, minY);
     }
     else if (element.type === 'tool-square' || element.type === 'tool-square-rotated') {
 
@@ -569,20 +563,13 @@ function onMouseDown(e) {
     }
     else if (currentTool === 'tool-text') {
         const textarea = document.createElement('textarea');
-        textarea.style.position = 'fixed';
+
+        textarea.classList.add('text-tool-input');
+
         textarea.style.left = (e.clientX - 1) + 'px';
         textarea.style.top = (e.clientY - 1) + 'px';
-        textarea.style.background = 'transparent';
-        textarea.style.border = '1px dashed';
-        textarea.style.borderColor = 'black';
         textarea.style.color = inputColor;
-        textarea.style.outline = 'none';
-        textarea.style.lineHeight = '1';
-
-        textarea.style.fontFamily = 'sans-serif';
         textarea.style.fontSize = `${inputWidth * 6}px`;
-        textarea.style.margin = '0';
-        textarea.style.padding = '0';
 
         document.body.appendChild(textarea);
 
@@ -862,7 +849,6 @@ canvas.addEventListener('pointermove', (e) => {
 
 function onMouseUp(e) {
     const rect = canvas.getBoundingClientRect();
-    // document.getElementById('deg-input').value = 0;
 
     let currX = e.clientX - rect.left;
     let currY = e.clientY - rect.top;
@@ -911,49 +897,35 @@ canvas.addEventListener('pointerup', (e) => {
     onMouseUp(e);
 });
 
-canvas.addEventListener('dblclick', (e) => {
-    if (currentTool !== 'tool-select') return;
-    for (let i = 0; i < elements.length; i++) {
-        const element = elements[i];
-        if (element.type === 'tool-text' || element.type === 'tool-text-rotated') {
-            let width = ctx.measureText(element.text).width;
-            if ((e.offsetX >= element.startX && e.offsetX <= element.startX + width) && (e.offsetY >= element.startY && e.offsetY <= element.startY + 24)) {
-                const textarea = document.createElement('textarea');
-                textarea.style.position = 'fixed';
-                textarea.style.left = element.startX - 1 + 'px';
-                textarea.style.top = element.startY - 2 + 'px';
-                textarea.style.background = 'transparent';
-                textarea.style.border = '1px dashed';
-                textarea.style.borderColor = 'black';
-                textarea.style.color = element.color;
-                textarea.style.outline = 'none';
-                textarea.style.lineHeight = '1';
+function editTextContent(element) {
+    let width = ctx.measureText(element.text).width;
+    const textarea = document.createElement('textarea');
 
-                textarea.style.fontFamily = 'sans-serif';
-                textarea.style.fontSize = `${element.width * 6}px`
-                textarea.style.margin = '0';
-                textarea.style.padding = '0';
+    textarea.classList.add('text-tool-input');
 
-                textarea.value = element.text;
+    textarea.style.left = element.startX - 1 + 'px';
+    textarea.style.top = element.startY - 2 + 'px';
+    textarea.style.color = element.color;
+    textarea.style.fontSize = `${element.width * 6}px`
 
-                element.text = "";
-                drawAllElements();
+    textarea.value = element.text;
 
-                document.body.appendChild(textarea);
+    element.text = "";
+    selectedElementIndex = null;
+    drawAllElements();
 
-                textarea.focus();
+    document.body.appendChild(textarea);
 
-                textarea.addEventListener('blur', () => {
-                    element.text = textarea.value;
-                    drawAllElements();
-                    saveDrawing();
-                    textarea.remove();
-                })
-                break;
-            }
-        }
-    }
-})
+    textarea.focus();
+
+    textarea.addEventListener('blur', () => {
+        element.text = textarea.value;
+        drawAllElements();
+        saveDrawing();
+        textarea.remove();
+    })
+    return;
+}
 
 function saveDrawing() {
     let saveData = JSON.stringify(elements);
@@ -1027,6 +999,15 @@ redoBtn.addEventListener('click', redo)
 
 window.addEventListener('keydown', (e) => {
     // e.preventDefault();
+    if (document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'INPUT') return;
+    if (e.key === 'Enter' && selectedElementIndex !== null) {
+        let selectedEl = elements[selectedElementIndex];
+        if (selectedEl.type.includes('tool-text')) {
+            e.preventDefault();
+            editTextContent(selectedEl);
+            return;
+        }
+    }
     if (currentTool !== 'tool-text') {
         e.preventDefault();
         if (selectedElementIndex !== null) {
