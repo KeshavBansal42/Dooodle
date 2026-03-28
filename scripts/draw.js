@@ -105,16 +105,24 @@ export function drawImage(element) {
     const renderImg = new Image();
     renderImg.crossOrigin = 'anonymous';
     renderImg.src = element.url;
+    let width = element.lastX - element.startX;
+    let height = element.lastY - element.startY;
     if (renderImg.complete) {
-        let width = element.lastX - element.startX;
-        let height = element.lastY - element.startY;
         ctx.drawImage(renderImg, element.startX, element.startY, width, height);
     }
     else {
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(element.startX, element.startY, width, height);
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = 'black';
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Loading...', element.startX + width / 2, element.startY + height / 2);
         renderImg.onload = () => {
-            let width = element.lastX - element.startX;
-            let height = element.lastY - element.startY;
-            ctx.drawImage(renderImg, element.startX, element.startY, width, height);
+            drawAllElements();
         }
     }
 }
